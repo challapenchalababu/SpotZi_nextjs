@@ -6,11 +6,13 @@ import { EmptyState, Pagination, fieldClass, pageQuery } from "@/components/ui/p
 import { firstParam } from "@/lib/api-client";
 import { loadPage } from "@/lib/page";
 import { NearbyOffers } from "@/components/customer/nearby";
-import { getPlatformSettings, listCategories } from "@/services/catalog.service";
+import { listCategories } from "@/services/catalog.service";
 import { listPublicOffers } from "@/services/offer.service";
 import { OFFER_TYPES, type OfferType } from "@/types/domain";
 
 export const metadata: Metadata = { title: "Offers", description: "Browse active local offers by category, discount, and city." };
+
+const DEFAULT_RADIUS_KM = 5;
 
 export default async function OffersPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams;
@@ -25,7 +27,7 @@ export default async function OffersPage({ searchParams }: { searchParams: Promi
   };
   const page = Number(firstParam(params.page) || 1);
   const loaded = await loadPage(async () => {
-    const [categories, offers, settings] = await Promise.all([
+    const [categories, offers] = await Promise.all([
       listCategories(false),
       listPublicOffers({
         page,
@@ -39,14 +41,13 @@ export default async function OffersPage({ searchParams }: { searchParams: Promi
         currentlyAvailable: query.currentlyAvailable === "true",
         discountMin: firstParam(params.discountMin) ? Number(firstParam(params.discountMin)) : undefined,
       }),
-      getPlatformSettings(),
     ]);
-    return { categories, offers, settings };
+    return { categories, offers };
   });
   if (!loaded.ok) return <div className="mx-auto max-w-6xl px-4 py-8"><SetupNotice message={loaded.message} /></div>;
   return (
     <div className="mx-auto max-w-6xl space-y-10 px-4 py-8">
-      <NearbyOffers defaultRadiusKm={loaded.data.settings.defaultRadiusKm} />
+      <NearbyOffers defaultRadiusKm={DEFAULT_RADIUS_KM} />
       <h1 className="display text-4xl">Offers</h1>
       <form className="grid gap-3 rounded-2xl border border-border bg-card p-4 md:grid-cols-4" action="/offers">
         <input className={fieldClass} name="q" defaultValue={query.q} placeholder="Business or offer" aria-label="Search" />

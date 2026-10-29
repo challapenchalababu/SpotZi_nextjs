@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Outfit } from "next/font/google";
-import { ApiLoader } from "@/components/ui/api-loader";
+import { AppLoader } from "@/components/ui/app-loader";
 import { APP_NAME, getAppUrl } from "@/lib/env";
 import "./globals.css";
 
@@ -25,6 +25,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${outfit.variable} ${fraunces.variable} h-full`}>
+      <head>
+        <link rel="preload" href="/logo_loader.webp" as="image" type="image/webp" />
+      </head>
       <body className="min-h-full bg-background text-foreground antialiased">
         <svg aria-hidden="true" className="absolute h-0 w-0" focusable="false">
           <defs>
@@ -36,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </defs>
         </svg>
         {children}
-        <ApiLoader />
+        <AppLoader />
       </body>
     </html>
   );

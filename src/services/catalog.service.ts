@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { previewBusinessProfile, previewCategories, previewCategoryBySlug, previewHome, previewSettings, previewTemplate, previewTemplates } from "@/data/preview-store";
 import { imageStorageMode, isPreviewMode, isSmtpConfigured } from "@/lib/env";
 import { connectDB } from "@/lib/db";
@@ -20,7 +21,7 @@ import { listPublicOffers } from "@/services/offer.service";
 import type { BusinessCard, CategoryDTO, HomePayload, PlatformSettingsDTO, TemplateDTO } from "@/types/domain";
 import type { CategoryInput, SettingsInput, TemplateInput } from "@/validators";
 
-export async function getPlatformSettings(): Promise<PlatformSettingsDTO> {
+export const getPlatformSettings = cache(async (): Promise<PlatformSettingsDTO> => {
   if (isPreviewMode()) return previewSettings();
   await connectDB();
   const doc = await PlatformSettingsModel.findById("platform").lean();
@@ -32,7 +33,7 @@ export async function getPlatformSettings(): Promise<PlatformSettingsDTO> {
     imageStorage: imageStorageMode(),
     emailDelivery: isSmtpConfigured() ? "smtp" : "unconfigured",
   };
-}
+});
 
 export async function updatePlatformSettings(actorId: string, input: SettingsInput): Promise<PlatformSettingsDTO> {
   await connectDB();
@@ -49,12 +50,12 @@ export async function updatePlatformSettings(actorId: string, input: SettingsInp
   return getPlatformSettings();
 }
 
-export async function listCategories(includeInactive = false): Promise<CategoryDTO[]> {
+export const listCategories = cache(async (includeInactive = false): Promise<CategoryDTO[]> => {
   if (isPreviewMode()) return previewCategories(includeInactive);
   await connectDB();
   const docs = await CategoryModel.find(includeInactive ? {} : { isActive: true }).sort({ sortOrder: 1, name: 1 }).lean();
   return docs.map(toCategory);
-}
+});
 
 export async function getCategoryBySlug(slug: string) {
   if (isPreviewMode()) return previewCategoryBySlug(slug);
