@@ -1,0 +1,85 @@
+{
+  "settings": {
+    "supportEmail": "support@loco.local",
+    "defaultRadiusKm": 5
+  },
+  "categories": [
+    { "id": "cat-restaurants", "name": "Restaurants", "slug": "restaurants", "icon": "utensils", "description": "Meals and daily restaurant specials.", "isActive": true, "sortOrder": 0 },
+    { "id": "cat-cafes", "name": "Cafes", "slug": "cafes", "icon": "coffee", "description": "Coffee, bakery counters, and cafe offers.", "isActive": true, "sortOrder": 1 },
+    { "id": "cat-supermarkets", "name": "Supermarkets", "slug": "supermarkets", "icon": "basket", "description": "Grocery and supermarket promotions.", "isActive": true, "sortOrder": 2 },
+    { "id": "cat-salons", "name": "Salons", "slug": "salons", "icon": "scissors", "description": "Hair, beauty, and salon appointments.", "isActive": true, "sortOrder": 3 },
+    { "id": "cat-retail", "name": "Retail", "slug": "retail", "icon": "bag", "description": "Shops and retail discounts.", "isActive": true, "sortOrder": 4 },
+    { "id": "cat-pharmacies", "name": "Pharmacies", "slug": "pharmacies", "icon": "pill", "description": "Pharmacy and wellness offers.", "isActive": true, "sortOrder": 5 },
+    { "id": "cat-bakeries", "name": "Bakeries", "slug": "bakeries", "icon": "croissant", "description": "Fresh bakery and dessert offers.", "isActive": true, "sortOrder": 6 },
+    { "id": "cat-fitness", "name": "Fitness", "slug": "fitness", "icon": "dumbbell", "description": "Studios and fitness promotions.", "isActive": true, "sortOrder": 7 }
+  ],
+  "users": [
+    { "id": "user-admin", "name": "Loco Admin", "email": "admin@loco.local", "role": "super_admin", "isActive": true, "createdDaysAgo": 40 },
+    { "id": "user-asha", "name": "Asha Menon", "email": "asha@cedar.example", "phone": "9845011122", "role": "owner", "isActive": true, "createdDaysAgo": 28 },
+    { "id": "user-rohan", "name": "Rohan Iyer", "email": "rohan@green.example", "phone": "9820099001", "role": "owner", "isActive": true, "createdDaysAgo": 21 },
+    { "id": "user-meera", "name": "Meera Shah", "email": "meera@customer.example", "role": "customer", "isActive": true, "createdDaysAgo": 12 },
+    { "id": "user-kabir", "name": "Kabir Das", "email": "kabir@customer.example", "role": "customer", "isActive": false, "createdDaysAgo": 9 },
+    { "id": "user-nisha", "name": "Nisha Rao", "email": "nisha@bloom.example", "phone": "9845099330", "role": "owner", "isActive": true, "createdDaysAgo": 6 }
+  ],
+  "businesses": [
+    { "id": "biz-cedar", "ownerId": "user-asha", "businessName": "Cedar Kitchen", "slug": "cedar-kitchen", "category": "restaurants", "description": "A neighbourhood kitchen in Bengaluru serving lunch thalis and evening snacks.", "contactPhone": "08041234567", "isActive": true, "updatedDaysAgo": 2 },
+    { "id": "biz-basket", "ownerId": "user-rohan", "businessName": "Green Basket", "slug": "green-basket", "category": "supermarkets", "description": "A supermarket with daily produce and grocery offers in Bandra.", "contactPhone": "02226550011", "isActive": true, "updatedDaysAgo": 1 },
+    { "id": "biz-brew", "ownerId": "user-rohan", "businessName": "Brew Room", "slug": "brew-room", "category": "cafes", "description": "A Jubilee Hills cafe with weekday coffee and pastry offers.", "contactPhone": "04023550022", "isActive": true, "updatedDaysAgo": 3 },
+    { "id": "biz-lotus", "ownerId": "user-asha", "businessName": "Lotus Salon", "slug": "lotus-salon", "category": "salons", "description": "A small salon in Indiranagar for haircuts, colour, and weekday appointments.", "contactPhone": "08041234890", "isActive": true, "updatedDaysAgo": 4 },
+    { "id": "biz-mill", "ownerId": "user-nisha", "businessName": "Mill & Crumb", "slug": "mill-and-crumb", "category": "bakeries", "description": "A Koramangala bakery with morning loaves and pastry boxes.", "contactPhone": "08041230021", "website": "https://millandcrumb.example", "isActive": true, "updatedDaysAgo": 1 },
+    { "id": "biz-pulse", "ownerId": "user-nisha", "businessName": "Pulse Studio", "slug": "pulse-studio", "category": "fitness", "description": "A Bandra studio with intro classes and off-peak memberships.", "contactPhone": "02226551190", "isActive": false, "updatedDaysAgo": 8 }
+  ],
+  "branches": [
+    { "id": "br-indi", "businessId": "biz-cedar", "branchName": "Indiranagar", "line1": "100 Feet Road", "area": "Indiranagar", "city": "Bengaluru", "citySlug": "bengaluru", "state": "Karnataka", "pincode": "560038", "lng": 77.6408, "lat": 12.9784, "phone": "9845011122", "isActive": true },
+    { "id": "br-kora", "businessId": "biz-cedar", "branchName": "Koramangala", "line1": "80 Feet Road", "area": "Koramangala", "city": "Bengaluru", "citySlug": "bengaluru", "state": "Karnataka", "pincode": "560034", "lng": 77.6245, "lat": 12.9352, "phone": "9845011144", "isActive": true },
+    { "id": "br-bandra", "businessId": "biz-basket", "branchName": "Bandra", "line1": "Hill Road", "area": "Bandra West", "city": "Mumbai", "citySlug": "mumbai", "state": "Maharashtra", "pincode": "400050", "lng": 72.8296, "lat": 19.0596, "phone": "9820099001", "isActive": true },
+    { "id": "br-jubilee", "businessId": "biz-brew", "branchName": "Jubilee Hills", "line1": "Road No. 36", "area": "Jubilee Hills", "city": "Hyderabad", "citySlug": "hyderabad", "state": "Telangana", "pincode": "500033", "lng": 78.407, "lat": 17.4319, "phone": "9845002211", "isActive": true, "sundayClosed": true },
+    { "id": "br-lotus", "businessId": "biz-lotus", "branchName": "Indiranagar studio", "line1": "12th Main", "area": "Indiranagar", "city": "Bengaluru", "citySlug": "bengaluru", "state": "Karnataka", "pincode": "560038", "lng": 77.6415, "lat": 12.9716, "phone": "9845099100", "isActive": true },
+    { "id": "br-mill", "businessId": "biz-mill", "branchName": "Koramangala oven", "line1": "5th Block", "area": "Koramangala", "city": "Bengaluru", "citySlug": "bengaluru", "state": "Karnataka", "pincode": "560095", "lng": 77.622, "lat": 12.934, "phone": "9845099330", "isActive": true },
+    { "id": "br-pulse", "businessId": "biz-pulse", "branchName": "Bandra studio", "line1": "Turner Road", "area": "Bandra West", "city": "Mumbai", "citySlug": "mumbai", "state": "Maharashtra", "pincode": "400050", "lng": 72.833, "lat": 19.054, "phone": "9820011002", "isActive": false }
+  ],
+  "templates": [
+    { "id": "tpl-classic", "name": "Classic poster", "layout": "classic", "backgroundColor": "#143f3b", "textColor": "#f7f3ea", "accentColor": "#e25b2a", "mutedColor": "#d7efe9", "fontFamily": "serif" },
+    { "id": "tpl-bold", "name": "Bold poster", "layout": "bold", "backgroundColor": "#1c1917", "textColor": "#fff7ed", "accentColor": "#f97316", "mutedColor": "#fdba74", "fontFamily": "sans" },
+    { "id": "tpl-minimal", "name": "Minimal poster", "layout": "minimal", "backgroundColor": "#f7f3ea", "textColor": "#142421", "accentColor": "#0f5c56", "mutedColor": "#5f6b66", "fontFamily": "sans" },
+    { "id": "tpl-split", "name": "Split poster", "layout": "split", "backgroundColor": "#0f5c56", "textColor": "#f7f3ea", "accentColor": "#f4c95d", "mutedColor": "#d7efe9", "fontFamily": "serif" },
+    { "id": "tpl-market", "name": "Spice market", "layout": "market", "backgroundColor": "#fff4e8", "textColor": "#3b2414", "accentColor": "#c45c26", "mutedColor": "#8a6a52", "fontFamily": "serif" },
+    { "id": "tpl-night", "name": "Midnight", "layout": "night", "backgroundColor": "#121418", "textColor": "#f5f0e6", "accentColor": "#e4b15a", "mutedColor": "#a39880", "fontFamily": "sans" },
+    { "id": "tpl-fresh", "name": "Fresh", "layout": "fresh", "backgroundColor": "#f3f7ef", "textColor": "#1c3324", "accentColor": "#2f6b45", "mutedColor": "#5d6b5a", "fontFamily": "sans" },
+    { "id": "tpl-frame", "name": "Salon frame", "layout": "frame", "backgroundColor": "#fbf6f8", "textColor": "#3d2433", "accentColor": "#9b4d6a", "mutedColor": "#8d7380", "fontFamily": "serif" },
+    { "id": "tpl-ticket", "name": "Ticket stub", "layout": "ticket", "backgroundColor": "#f4efe4", "textColor": "#1f2933", "accentColor": "#c2410c", "mutedColor": "#6b6258", "fontFamily": "serif" }
+  ],
+  "offers": [
+    { "id": "off-lunch", "slug": "cedar-lunch-thali", "title": "Lunch thali at 20% off", "businessId": "biz-cedar", "branchId": "br-indi", "templateId": "tpl-classic", "offerType": "percentage", "discountValue": 20, "originalPrice": 250, "discountedPrice": 200, "status": "published", "fromOffset": -2, "untilOffset": 12, "createdDaysAgo": 5, "viewsCount": 48, "description": "Weekday lunch thali with two vegetables, rice, and dessert. Show this offer at the counter before you order.", "terms": "One offer per bill. Dine-in only." },
+    { "id": "off-snacks", "slug": "cedar-evening-snacks", "title": "Evening snacks ending soon", "businessId": "biz-cedar", "branchId": "br-kora", "templateId": "tpl-bold", "offerType": "percentage", "discountValue": 15, "originalPrice": 180, "discountedPrice": 153, "status": "published", "fromOffset": -3, "untilOffset": 1, "createdDaysAgo": 1, "viewsCount": 12, "description": "Pakora and chai combo at the Koramangala counter. This promotion ends tomorrow.", "terms": "Available after 4 pm. One combo per person." },
+    { "id": "off-draft", "slug": "cedar-weekend-draft", "title": "Weekend family platter", "businessId": "biz-cedar", "branchId": "br-indi", "templateId": "tpl-minimal", "offerType": "special", "originalPrice": 900, "discountedPrice": 750, "status": "draft", "fromOffset": 2, "untilOffset": 20, "createdDaysAgo": 0, "viewsCount": 0, "description": "A draft platter for four. It stays off the public site until Asha publishes it.", "terms": "Advance booking required." },
+    { "id": "off-expired", "slug": "cedar-expired-breakfast", "title": "Breakfast combo", "businessId": "biz-cedar", "branchId": "br-indi", "templateId": "tpl-split", "offerType": "flat", "discountValue": 40, "originalPrice": 160, "discountedPrice": 120, "status": "published", "fromOffset": -12, "untilOffset": -1, "createdDaysAgo": 14, "viewsCount": 7, "description": "Idli, vada, and filter coffee. The validity window has already ended.", "terms": "Was valid for breakfast service only." },
+    { "id": "off-produce", "slug": "green-basket-produce", "title": "Fresh produce flat discount", "businessId": "biz-basket", "branchId": "br-bandra", "templateId": "tpl-classic", "offerType": "flat", "discountValue": 50, "originalPrice": 400, "discountedPrice": 350, "status": "published", "fromOffset": -1, "untilOffset": 7, "createdDaysAgo": 3, "viewsCount": 22, "description": "Rs 50 off a produce bill of Rs 400 or more at the Bandra store.", "terms": "One discount per bill. In-store only." },
+    { "id": "off-paused", "slug": "brew-room-paused", "title": "Pastry with coffee", "businessId": "biz-brew", "branchId": "br-jubilee", "templateId": "tpl-bold", "offerType": "bogo", "status": "paused", "fromOffset": -1, "untilOffset": 10, "createdDaysAgo": 2, "viewsCount": 4, "description": "Buy one pastry and get a filter coffee. The cafe has paused this offer.", "terms": "Dine-in before 6 pm." },
+    { "id": "off-salon", "slug": "lotus-weekday-cut", "title": "Weekday haircut 30% off", "businessId": "biz-lotus", "branchId": "br-lotus", "templateId": "tpl-minimal", "offerType": "percentage", "discountValue": 30, "originalPrice": 700, "discountedPrice": 490, "status": "published", "fromOffset": -4, "untilOffset": 18, "createdDaysAgo": 4, "viewsCount": 36, "description": "Haircut and blow-dry on Monday to Thursday. Book at the Indiranagar studio.", "terms": "Walk-ins after 2 pm. Colour services excluded.", "activeDays": ["monday", "tuesday", "wednesday", "thursday"], "startTime": "11:00", "endTime": "19:00" },
+    { "id": "off-bakery", "slug": "mill-morning-loaf", "title": "Morning loaf, second half price", "businessId": "biz-mill", "branchId": "br-mill", "templateId": "tpl-split", "offerType": "bogo", "originalPrice": 180, "discountedPrice": 90, "status": "published", "fromOffset": -1, "untilOffset": 9, "createdDaysAgo": 1, "viewsCount": 15, "description": "Buy one sourdough loaf and take the second at half price before noon.", "terms": "While the morning batch lasts.", "startTime": "08:00", "endTime": "12:00" },
+    { "id": "off-fitness", "slug": "pulse-intro-class", "title": "Intro class at a special rate", "businessId": "biz-pulse", "branchId": "br-pulse", "templateId": "tpl-classic", "offerType": "special", "originalPrice": 800, "discountedPrice": 299, "status": "published", "fromOffset": -6, "untilOffset": 5, "createdDaysAgo": 6, "viewsCount": 9, "description": "One intro class for new visitors. The studio listing is disabled, so this offer stays out of public search.", "terms": "New visitors only. Book the same day." }
+  ],
+  "favorites": [
+    { "id": "fav-1", "userId": "user-meera", "offerId": "off-lunch", "createdDaysAgo": 1 },
+    { "id": "fav-2", "userId": "user-meera", "offerId": "off-salon", "createdDaysAgo": 2 },
+    { "id": "fav-3", "userId": "user-kabir", "offerId": "off-produce", "createdDaysAgo": 3 }
+  ],
+  "redemptions": [
+    { "id": "red-1", "userId": "user-meera", "offerId": "off-produce", "code": "MEERA4K2P", "status": "claimed", "claimedDaysAgo": 0 },
+    { "id": "red-2", "userId": "user-meera", "offerId": "off-lunch", "code": "MEERA9LQ1", "status": "redeemed", "claimedDaysAgo": 2, "redeemedDaysAgo": 2 },
+    { "id": "red-3", "userId": "user-kabir", "offerId": "off-bakery", "code": "KABIR2MN8", "status": "claimed", "claimedDaysAgo": 1 }
+  ],
+  "reports": [
+    { "id": "rep-1", "userId": "user-meera", "offerId": "off-lunch", "reason": "other", "description": "The lunch counter was closed during the posted hours.", "status": "open", "createdDaysAgo": 1 },
+    { "id": "rep-2", "userId": "user-kabir", "offerId": "off-produce", "reason": "misleading", "description": "The produce discount did not apply to the advertised vegetables.", "status": "reviewing", "createdDaysAgo": 2 }
+  ],
+  "activity": [
+    { "id": "act-1", "actorId": "user-asha", "action": "offer.publish", "resourceType": "offer", "resourceId": "off-lunch", "hoursAgo": 30 },
+    { "id": "act-2", "actorId": "user-rohan", "action": "offer.pause", "resourceType": "offer", "resourceId": "off-paused", "hoursAgo": 20 },
+    { "id": "act-3", "actorId": "user-meera", "action": "report.create", "resourceType": "report", "resourceId": "rep-1", "hoursAgo": 18 },
+    { "id": "act-4", "actorId": "user-admin", "action": "business.disable", "resourceType": "business", "resourceId": "biz-pulse", "hoursAgo": 10 },
+    { "id": "act-5", "actorId": "user-nisha", "action": "offer.publish", "resourceType": "offer", "resourceId": "off-bakery", "hoursAgo": 8 },
+    { "id": "act-6", "actorId": "user-asha", "action": "branch.update", "resourceType": "branch", "resourceId": "br-kora", "hoursAgo": 4 }
+  ]
+}
