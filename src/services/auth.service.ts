@@ -7,9 +7,19 @@ import { AppError } from "@/lib/errors";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { rateLimit } from "@/lib/rate-limit";
 import { signSessionToken } from "@/lib/session-token";
-import { PasswordResetModel, UserModel } from "@/models";
+import {
+  BranchModel,
+  BusinessModel,
+  FavoriteModel,
+  OfferModel,
+  OfferTemplateModel,
+  PasswordResetModel,
+  RedemptionModel,
+  ReportModel,
+  UserModel,
+} from "@/models";
 import { logActivity } from "@/services/activity.service";
-import type { LoginInput, ProfileInput, RegisterInput, ResetInput } from "@/validators";
+import type { DeleteAccountInput, LoginInput, ProfileInput, RegisterInput, ResetInput } from "@/validators";
 
 let dummyHashPromise: Promise<string> | null = null;
 
@@ -145,6 +155,59 @@ export async function changePassword(userId: string, input: { currentPassword: s
   });
   await logActivity({ actorId: userId, action: "user.password_change", resourceType: "user", resourceId: userId });
   return { token, message: "Password updated." };
+}
+
+export async function deleteAccount(userId: string, input: DeleteAccountInput) {
+  await connectDB();
+  const user = await UserModel.findById(userId).select("+passwordHash");
+  if (!user?.passwordHash) throw new AppError(401, "unauthorized", "Sign in to continue.");
+  const matches = await verifyPassword(input.password, user.passwordHash);
+  if (!matches) throw new AppError(400, "invalid_password", "The password is incorrect.");
+
+  if (user.role === "super_admin") {
+    const remaining = await UserModel.countDocuments({ role: "super_admin", isActive: true, _id: { $ne: user._id } });
+    if (remaining === 0) {
+      throw new AppError(400, "last_admin", "Keep at least one active super admin. Create another admin before deleting this account.");
+    }
+  }
+
+  if (user.role === "owner") {
+    const businesses = await BusinessModel.find({ ownerId: user._id }).select("_id").lean();
+    const businessIds = businesses.map((doc) => doc._id);
+    if (businessIds.length) {
+      const offers = await OfferModel.find({ businessId: { $in: businessIds } }).select("_id").lean();
+      const offerIds = offers.map((doc) => doc._id);
+      if (offerIds.length) {
+        await Promise.all([
+          FavoriteModel.deleteMany({ offerId: { $in: offerIds } }),
+          RedemptionModel.deleteMany({ offerId: { $in: offerIds } }),
+          ReportModel.deleteMany({ offerId: { $in: offerIds } }),
+        ]);
+        await OfferModel.deleteMany({ _id: { $in: offerIds } });
+      }
+      await BranchModel.deleteMany({ businessId: { $in: businessIds } });
+      await BusinessModel.deleteMany({ _id: { $in: businessIds } });
+    }
+    await OfferTemplateModel.updateMany({ createdBy: user._id }, { $unset: { createdBy: 1 } });
+  }
+
+  await Promise.all([
+    FavoriteModel.deleteMany({ userId: user._id }),
+    RedemptionModel.deleteMany({ userId: user._id }),
+    ReportModel.deleteMany({ userId: user._id }),
+    PasswordResetModel.deleteMany({ userId: user._id }),
+  ]);
+
+  await logActivity({
+    actorId: userId,
+    action: "user.delete_account",
+    resourceType: "user",
+    resourceId: userId,
+    metadata: { role: user.role, email: user.email },
+  });
+
+  await UserModel.deleteOne({ _id: user._id });
+  return { message: "Your account has been deleted." };
 }
 
 function createResetToken() {

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { PasswordForm, ProfileForm } from "@/components/forms/account-forms";
+import { DeleteAccountCard, PasswordForm, ProfileForm } from "@/components/forms/account-forms";
 import { getSession } from "@/lib/session";
 
 export const metadata = { title: "Profile", robots: { index: false, follow: false } };
@@ -13,6 +13,7 @@ export default async function ProfilePage() {
       <ProfileForm user={session} />
       <h2 className="text-2xl font-semibold">Password</h2>
       <PasswordForm />
+      <DeleteAccountCard role={session.role} />
     </div>
   );
 }

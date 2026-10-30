@@ -86,6 +86,14 @@ export const changePasswordSchema = z.object({
   newPassword: passwordSchema,
 });
 
+export const deleteAccountSchema = z.object({
+  password: z.string().min(1, "Enter your password.").max(72),
+  confirmation: z
+    .string()
+    .trim()
+    .refine((value) => value === "DELETE", "Type DELETE to confirm."),
+});
+
 export const userStatusSchema = z.object({
   isActive: z.boolean(),
 });
@@ -325,6 +333,7 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ProfileInput = z.infer<typeof profileSchema>;
 export type ResetInput = z.infer<typeof resetSchema>;
+export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;
 export type BusinessInput = z.infer<typeof businessSchema>;
 export type BranchInput = z.infer<typeof branchSchema>;
 export type CreateOfferInput = z.infer<typeof createOfferSchema>;
