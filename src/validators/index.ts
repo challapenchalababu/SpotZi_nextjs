@@ -174,6 +174,24 @@ export const categorySchema = z.object({
   sortOrder: z.preprocess(emptyNumber, z.number().int().min(0).max(999).default(0)),
 });
 
+export const offerProductSchema = z.object({
+  name: z.string().trim().min(1, "Enter a product name.").max(120),
+  discountValue: optionalPrice,
+  originalPrice: optionalPrice,
+  discountedPrice: optionalPrice,
+  posterUrl: z.string().trim().max(500).optional().or(z.literal("")),
+});
+
+export const offerItemSchema = z.object({
+  name: z.string().trim().min(1, "Enter a product name.").max(120),
+  originalPrice: optionalPrice,
+  discountedPrice: optionalPrice,
+  discountPercent: optionalPrice,
+  discountValue: optionalPrice,
+  posterUrl: z.string().trim().max(500).optional().or(z.literal("")),
+  sortOrder: z.preprocess(emptyNumber, z.number().int().min(0).max(999).default(0)),
+});
+
 const offerFields = {
   businessId: z.string().min(1),
   templateId: z.string().min(1),
@@ -183,6 +201,7 @@ const offerFields = {
   discountValue: optionalPrice,
   originalPrice: optionalPrice,
   discountedPrice: optionalPrice,
+  items: z.array(offerItemSchema).max(50).default([]),
   posterUrl: z.string().trim().max(500).optional().or(z.literal("")),
   validFrom: dateSchema,
   validUntil: dateSchema,
@@ -194,6 +213,39 @@ const offerFields = {
   redemptionLimit: optionalLimit,
   status: z.enum(["draft", "published"]),
 };
+
+function refinePricing(
+  data: {
+    offerType: string;
+    discountValue?: number;
+    originalPrice?: number;
+    discountedPrice?: number;
+  },
+  ctx: z.RefinementCtx,
+  pathPrefix: (string | number)[] = [],
+) {
+  if (data.offerType === "percentage" && (data.discountValue == null || data.discountValue < 1 || data.discountValue > 100)) {
+    ctx.addIssue({ code: "custom", message: "Percentage discounts must be from 1 to 100.", path: [...pathPrefix, "discountValue"] });
+  }
+  if (data.offerType === "flat" && (data.discountValue == null || data.discountValue <= 0)) {
+    ctx.addIssue({ code: "custom", message: "Enter a flat discount greater than zero.", path: [...pathPrefix, "discountValue"] });
+  }
+  if (
+    data.offerType === "flat" &&
+    data.originalPrice != null &&
+    data.discountValue != null &&
+    data.discountValue >= data.originalPrice
+  ) {
+    ctx.addIssue({ code: "custom", message: "A flat discount must be lower than the original price.", path: [...pathPrefix, "discountValue"] });
+  }
+  if (data.originalPrice != null && data.discountedPrice != null && data.discountedPrice > data.originalPrice) {
+    ctx.addIssue({
+      code: "custom",
+      message: "The discounted price cannot be higher than the original price.",
+      path: [...pathPrefix, "discountedPrice"],
+    });
+  }
+}
 
 function refineOffer(data: {
   validFrom: string;
@@ -208,6 +260,12 @@ function refineOffer(data: {
   status: string;
   description: string;
   termsAndConditions?: string;
+  products?: Array<{
+    name: string;
+    discountValue?: number;
+    originalPrice?: number;
+    discountedPrice?: number;
+  }>;
 }, ctx: z.RefinementCtx) {
   if (data.validUntil < data.validFrom) {
     ctx.addIssue({ code: "custom", message: "The end date must be on or after the start date.", path: ["validUntil"] });
@@ -220,26 +278,12 @@ function refineOffer(data: {
   if ((start && !end) || (!start && end)) {
     ctx.addIssue({ code: "custom", message: "Enter both a start and end time, or leave both empty.", path: ["endTime"] });
   }
-  if (data.offerType === "percentage" && (data.discountValue == null || data.discountValue < 1 || data.discountValue > 100)) {
-    ctx.addIssue({ code: "custom", message: "Percentage discounts must be from 1 to 100.", path: ["discountValue"] });
-  }
-  if (data.offerType === "flat" && (data.discountValue == null || data.discountValue <= 0)) {
-    ctx.addIssue({ code: "custom", message: "Enter a flat discount greater than zero.", path: ["discountValue"] });
-  }
-  if (
-    data.offerType === "flat" &&
-    data.originalPrice != null &&
-    data.discountValue != null &&
-    data.discountValue >= data.originalPrice
-  ) {
-    ctx.addIssue({ code: "custom", message: "A flat discount must be lower than the original price.", path: ["discountValue"] });
-  }
-  if (data.originalPrice != null && data.discountedPrice != null && data.discountedPrice > data.originalPrice) {
-    ctx.addIssue({
-      code: "custom",
-      message: "The discounted price cannot be higher than the original price.",
-      path: ["discountedPrice"],
+  if (data.products?.length) {
+    data.products.forEach((product, index) => {
+      refinePricing({ offerType: data.offerType, ...product }, ctx, ["products", index]);
     });
+  } else {
+    refinePricing(data, ctx);
   }
   if (data.status === "published" && data.description.trim().length < 20) {
     ctx.addIssue({ code: "custom", message: "Write at least 20 characters before publishing.", path: ["description"] });
@@ -250,7 +294,11 @@ function refineOffer(data: {
 }
 
 export const createOfferSchema = z
-  .object({ ...offerFields, branchIds: z.array(z.string().min(1)).min(1).max(20) })
+  .object({
+    ...offerFields,
+    branchIds: z.array(z.string().min(1)).min(1).max(20),
+    products: z.array(offerProductSchema).min(1, "Add at least one product offer.").max(30),
+  })
   .superRefine(refineOffer);
 
 export const updateOfferSchema = z

@@ -95,6 +95,7 @@ export function toBranch(doc: BranchRecord, businessName?: string): BranchDTO {
     businessId: asId(doc.businessId),
     businessName,
     branchName: doc.branchName,
+    slug: doc.slug || undefined,
     address: doc.address,
     latitude,
     longitude,
@@ -104,6 +105,18 @@ export function toBranch(doc: BranchRecord, businessName?: string): BranchDTO {
     createdAt: iso(doc.createdAt) || new Date(0).toISOString(),
     updatedAt: iso(doc.updatedAt) || new Date(0).toISOString(),
   };
+}
+
+export function toOfferItems(items?: OfferRecord["items"]) {
+  return (items ?? []).map((item, index) => ({
+    name: item.name,
+    originalPrice: item.originalPrice ?? undefined,
+    discountedPrice: item.discountedPrice ?? undefined,
+    discountPercent: item.discountPercent ?? item.discountValue ?? undefined,
+    discountValue: item.discountValue ?? item.discountPercent ?? undefined,
+    posterUrl: safeImageUrl(item.posterUrl),
+    sortOrder: item.sortOrder ?? index,
+  }));
 }
 
 export function toTemplate(doc: TemplateRecord): TemplateDTO {
@@ -151,6 +164,7 @@ export function toPublicOffer(input: {
     discountValue: offer.discountValue ?? undefined,
     originalPrice: offer.originalPrice ?? undefined,
     discountedPrice: offer.discountedPrice ?? undefined,
+    items: toOfferItems(offer.items),
     discountLabel: discountLabel(offer),
     posterUrl: safeImageUrl(offer.posterUrl),
     validFrom: iso(offer.validFrom) || new Date(0).toISOString(),
@@ -177,6 +191,7 @@ export function toPublicOffer(input: {
     branch: {
       id: branchDto.id,
       branchName: branchDto.branchName,
+      slug: branchDto.slug,
       address: branchDto.address,
       latitude: branchDto.latitude,
       longitude: branchDto.longitude,

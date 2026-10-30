@@ -1,15 +1,17 @@
 import { previewCities, previewManagedOffer, previewManagedOffers, previewNearby, previewOfferBySlug, previewPublicOffers, previewSitemap } from "@/data/preview-store";
 import { connectDB } from "@/lib/db";
 import { isPreviewMode } from "@/lib/env";
-import { discountScore } from "@/lib/discount";
+import { discountLabel, discountScore } from "@/lib/discount";
 import { AppError } from "@/lib/errors";
-import { randomSlugSuffix } from "@/lib/ids";
+import { normalizeOpeningHours } from "@/lib/hours";
+import { randomSlugSuffix, uniqueSlug } from "@/lib/ids";
 import { escapeRegex, slugify } from "@/lib/slug";
 import { validateNearbyQuery } from "@/lib/geo";
 import { availabilityOf, isWithinSchedule, isWithinValidityDates } from "@/lib/offer-validity";
 import { safeImageUrl } from "@/lib/sanitize";
 import { blank, toManagedOffer, toPublicOffer } from "@/lib/serialize";
 import { dateInputToRange } from "@/lib/time";
+import { Types } from "mongoose";
 import {
   BranchModel,
   BusinessModel,
@@ -25,7 +27,7 @@ import {
 } from "@/models";
 import { ownerBusinessIds, requireOwnedBusiness, requireOwnedOffer, toObjectId } from "@/services/access";
 import { logActivity } from "@/services/activity.service";
-import type { ManagedOfferDTO, OfferStatus, PageResult, PublicOfferDTO } from "@/types/domain";
+import type { ManagedOfferDTO, OfferStatus, PageResult, PublicOfferDTO, PublicStoreDTO } from "@/types/domain";
 import type { CreateOfferInput, UpdateOfferInput } from "@/validators";
 
 const SCAN_LIMIT = 300;
@@ -120,6 +122,23 @@ function offerPayload(input: CreateOfferInput | UpdateOfferInput, branch: Branch
   }
   const poster = blank(input.posterUrl);
   if (poster && !safeImageUrl(poster)) throw new AppError(400, "invalid_image", "Upload the poster before saving it.");
+  const items = (input.items ?? [])
+    .map((item, index) => {
+      const itemPoster = blank(item.posterUrl);
+      if (itemPoster && !safeImageUrl(itemPoster)) {
+        throw new AppError(400, "invalid_image", "Upload each product poster before saving.");
+      }
+      return {
+        name: item.name.trim(),
+        originalPrice: item.originalPrice,
+        discountedPrice: item.discountedPrice,
+        discountPercent: item.discountPercent ?? item.discountValue,
+        discountValue: item.discountValue ?? item.discountPercent,
+        posterUrl: itemPoster,
+        sortOrder: item.sortOrder ?? index,
+      };
+    })
+    .filter((item) => item.name.length > 0);
   return {
     templateId: input.templateId,
     title: input.title.trim(),
@@ -128,6 +147,7 @@ function offerPayload(input: CreateOfferInput | UpdateOfferInput, branch: Branch
     discountValue: input.discountValue,
     originalPrice: input.originalPrice,
     discountedPrice: input.discountedPrice,
+    items,
     posterUrl: poster,
     validFrom: rangeStart.start,
     validUntil: rangeEnd.end,
@@ -166,26 +186,84 @@ export async function createOffers(ownerId: string, input: CreateOfferInput): Pr
     throw new AppError(400, "inactive_branch", "Publish offers only for active branches.");
   }
   const template = await assertTemplate(input.templateId, input.status === "published");
-  const created = await OfferModel.create(
-    branches.map((branch) => ({
-      ...offerPayload(input, branch),
-      businessId: business._id,
-      branchId: branch._id,
-      slug: `${slugify(input.title).slice(0, 50) || "offer"}-${randomSlugSuffix()}`,
-      viewsCount: 0,
-    })),
-  );
+  const products = input.products?.length
+    ? input.products
+    : [
+        {
+          name: input.title.trim(),
+          discountValue: input.discountValue,
+          originalPrice: input.originalPrice,
+          discountedPrice: input.discountedPrice,
+          posterUrl: input.posterUrl || "",
+        },
+      ];
+  if (branches.length * products.length > 60) {
+    throw new AppError(400, "too_many_offers", "Too many branch and product combinations. Use fewer branches or products.");
+  }
+
+  const docs = [];
+  for (const branch of branches) {
+    for (const product of products) {
+      const productName = product.name.trim();
+      const title =
+        products.length === 1 && productName.toLowerCase() === input.title.trim().toLowerCase()
+          ? input.title.trim()
+          : products.length === 1
+            ? productName
+            : `${input.title.trim()} · ${productName}`;
+      const productPoster = blank(product.posterUrl);
+      if (productPoster && !safeImageUrl(productPoster)) {
+        throw new AppError(400, "invalid_image", "Upload each product poster before saving.");
+      }
+      const payload = offerPayload(
+        {
+          ...input,
+          title,
+          discountValue: product.discountValue,
+          originalPrice: product.originalPrice,
+          discountedPrice: product.discountedPrice,
+          posterUrl: productPoster || "",
+          items: [
+            {
+              name: productName,
+              originalPrice: product.originalPrice,
+              discountedPrice: product.discountedPrice,
+              discountPercent: product.discountValue,
+              discountValue: product.discountValue,
+              posterUrl: productPoster || "",
+              sortOrder: 0,
+            },
+          ],
+        },
+        branch,
+      );
+      docs.push({
+        ...payload,
+        businessId: business._id,
+        branchId: branch._id,
+        slug: `${slugify(title).slice(0, 50) || "offer"}-${randomSlugSuffix()}`,
+        viewsCount: 0,
+      });
+    }
+  }
+
+  const created = await OfferModel.create(docs);
   await logActivity({
     actorId: ownerId,
     action: input.status === "published" ? "offer.publish" : "offer.create",
     resourceType: "offer",
     resourceId: String(created[0]?._id ?? ""),
-    metadata: { count: created.length, business: business.slug },
+    metadata: { count: created.length, products: products.length, business: business.slug },
   });
   const names = await categoryNames();
   return created.map((offer) =>
     toManaged(
-      { offer: offer.toObject(), business: business.toObject(), branch: branches.find((branch) => String(branch._id) === String(offer.branchId))!, template: template.toObject() },
+      {
+        offer: offer.toObject(),
+        business: business.toObject(),
+        branch: branches.find((branch) => String(branch._id) === String(offer.branchId))!,
+        template: template.toObject(),
+      },
       names,
     ),
   );
@@ -249,6 +327,64 @@ export async function archiveOffer(ownerId: string, offerId: string) {
   return setOfferStatus(ownerId, offerId, "archived");
 }
 
+async function ensureBranchSlug(branch: BranchRecord) {
+  const id = String(branch._id);
+  const idSuffix = id.slice(-8);
+  const root = slugify(`${branch.branchName}-${branch.address.area}-${branch.address.city}`) || "store";
+  const desired = `${root}-${idSuffix}`;
+  // Always bind slug to this branch id so store cards never collide onto another store.
+  if (branch.slug === desired) return branch.slug;
+  try {
+    await BranchModel.updateOne({ _id: branch._id }, { $set: { slug: desired } });
+    branch.slug = desired;
+    return desired;
+  } catch {
+    const fallback = await uniqueSlug(BranchModel, "slug", desired);
+    await BranchModel.updateOne({ _id: branch._id }, { $set: { slug: fallback } });
+    branch.slug = fallback;
+    return fallback;
+  }
+}
+
+function toStoreDto(input: {
+  branch: BranchRecord;
+  business: BusinessRecord;
+  categoryName?: string;
+  offerCount: number;
+  itemCount: number;
+  topOffer?: OfferRecord | null;
+  distanceKm?: number;
+}): PublicStoreDTO {
+  const [longitude, latitude] = input.branch.location.coordinates;
+  const id = String(input.branch._id);
+  return {
+    id,
+    // Prefer stable id in public URLs; slug remains for readable links when present.
+    slug: input.branch.slug || id,
+    branchName: input.branch.branchName,
+    address: input.branch.address,
+    latitude,
+    longitude,
+    phone: input.branch.phone || undefined,
+    openingHours: normalizeOpeningHours(input.branch.openingHours),
+    offerCount: input.offerCount,
+    itemCount: input.itemCount,
+    topDiscountLabel: input.topOffer ? discountLabel(input.topOffer) : undefined,
+    posterUrl: safeImageUrl(input.topOffer?.posterUrl) || safeImageUrl(input.business.logoUrl),
+    distanceKm: input.distanceKm,
+    business: {
+      id: String(input.business._id),
+      businessName: input.business.businessName,
+      slug: input.business.slug,
+      logoUrl: safeImageUrl(input.business.logoUrl),
+      category: input.business.category,
+      categoryName: input.categoryName,
+      contactPhone: input.business.contactPhone || undefined,
+      website: input.business.website || undefined,
+    },
+  };
+}
+
 export async function listPublicOffers(input: {
   page: number;
   limit: number;
@@ -258,6 +394,8 @@ export async function listPublicOffers(input: {
   area?: string;
   pincode?: string;
   businessSlug?: string;
+  branchId?: string;
+  branchSlug?: string;
   offerType?: CreateOfferInput["offerType"];
   discountMin?: number;
   sort?: "newest" | "discount" | "ending" | "views";
@@ -278,7 +416,13 @@ export async function listPublicOffers(input: {
     businessId: { $in: businesses.map((business) => business._id) },
   };
   if (input.offerType) filter.offerType = input.offerType;
-  if (input.city || input.area || input.pincode) {
+  if (input.branchId) {
+    filter.branchId = toObjectId(input.branchId, "Branch");
+  } else if (input.branchSlug) {
+    const branch = await BranchModel.findOne({ slug: input.branchSlug, isActive: true }).select("_id").lean();
+    if (!branch) return emptyPage(input.page, input.limit);
+    filter.branchId = branch._id;
+  } else if (input.city || input.area || input.pincode) {
     const branchFilter: Record<string, unknown> = { isActive: true };
     if (input.city) branchFilter["address.citySlug"] = slugify(input.city);
     if (input.area) branchFilter["address.area"] = new RegExp(escapeRegex(input.area), "i");
@@ -465,6 +609,186 @@ export async function findNearbyOffers(input: {
 export async function incrementOfferView(offerId: string) {
   await connectDB();
   await OfferModel.updateOne({ _id: offerId, status: "published" }, { $inc: { viewsCount: 1 } });
+}
+
+export async function findNearbyStores(input: {
+  lat: number;
+  lng: number;
+  radiusKm: number;
+  page: number;
+  limit: number;
+  q?: string;
+  category?: string;
+}): Promise<PageResult<PublicStoreDTO>> {
+  if (isPreviewMode()) return emptyPage(input.page, input.limit);
+  const geo = validateNearbyQuery(input);
+  await connectDB();
+  const now = new Date();
+  const docs = await BranchModel.aggregate([
+    {
+      $geoNear: {
+        near: { type: "Point", coordinates: [geo.lng, geo.lat] },
+        distanceField: "distanceMeters",
+        maxDistance: geo.radiusKm * 1000,
+        spherical: true,
+        query: { isActive: true },
+      },
+    },
+    { $limit: 80 },
+    { $lookup: { from: "businesses", localField: "businessId", foreignField: "_id", as: "business" } },
+    { $unwind: "$business" },
+    { $match: { "business.isActive": true } },
+    {
+      $lookup: {
+        from: "offers",
+        let: { branchId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ["$branchId", "$$branchId"] },
+              status: "published",
+              validUntil: { $gte: now },
+            },
+          },
+          { $sort: { createdAt: -1 } },
+        ],
+        as: "offers",
+      },
+    },
+    { $match: { "offers.0": { $exists: true } } },
+  ]);
+
+  const names = await categoryNames();
+  let stores: PublicStoreDTO[] = [];
+  for (const doc of docs) {
+    const branch = doc as BranchRecord & { distanceMeters?: number; offers?: OfferRecord[]; business: BusinessRecord };
+    if (input.category && branch.business.category !== input.category) continue;
+    if (input.q) {
+      const query = input.q.toLowerCase();
+      const haystack = `${branch.branchName} ${branch.business.businessName} ${branch.address.area} ${branch.address.city}`.toLowerCase();
+      if (!haystack.includes(query)) continue;
+    }
+    await ensureBranchSlug(branch);
+    const offers = (branch.offers ?? []).filter((offer) => {
+      const availability = availabilityOf(offer, now);
+      return availability === "active" || availability === "scheduled";
+    });
+    if (!offers.length) continue;
+    const topOffer = [...offers].sort((a, b) => discountScore(b) - discountScore(a))[0];
+    const itemCount = offers.reduce((sum, offer) => sum + (offer.items?.length || 0), 0);
+    stores.push(
+      toStoreDto({
+        branch,
+        business: branch.business,
+        categoryName: names.get(branch.business.category),
+        offerCount: offers.length,
+        itemCount,
+        topOffer,
+        distanceKm: Math.round((Number(branch.distanceMeters) / 1000) * 10) / 10,
+      }),
+    );
+  }
+
+  return paginate(stores, input.page, input.limit);
+}
+
+export async function listPublicStores(input: {
+  page: number;
+  limit: number;
+  q?: string;
+  category?: string;
+  city?: string;
+}): Promise<PageResult<PublicStoreDTO>> {
+  if (isPreviewMode()) return emptyPage(input.page, input.limit);
+  await connectDB();
+  const now = new Date();
+  const businessFilter: Record<string, unknown> = { isActive: true };
+  if (input.category) businessFilter.category = input.category;
+  const businesses = await BusinessModel.find(businessFilter).lean();
+  if (!businesses.length) return emptyPage(input.page, input.limit);
+  const businessById = new Map(businesses.map((business) => [String(business._id), business]));
+  const branchFilter: Record<string, unknown> = {
+    isActive: true,
+    businessId: { $in: businesses.map((business) => business._id) },
+  };
+  if (input.city) branchFilter["address.citySlug"] = slugify(input.city);
+  if (input.q) {
+    const expression = new RegExp(escapeRegex(input.q), "i");
+    branchFilter.$or = [{ branchName: expression }, { "address.area": expression }, { "address.city": expression }];
+  }
+  const branches = await BranchModel.find(branchFilter).sort({ createdAt: -1 }).limit(200).lean();
+  const offers = await OfferModel.find({
+    branchId: { $in: branches.map((branch) => branch._id) },
+    status: "published",
+    validUntil: { $gte: now },
+  })
+    .sort({ createdAt: -1 })
+    .lean();
+  const offersByBranch = new Map<string, OfferRecord[]>();
+  for (const offer of offers) {
+    const key = String(offer.branchId);
+    const list = offersByBranch.get(key) || [];
+    list.push(offer);
+    offersByBranch.set(key, list);
+  }
+  const names = await categoryNames();
+  const stores: PublicStoreDTO[] = [];
+  for (const branch of branches) {
+    const business = businessById.get(String(branch.businessId));
+    if (!business) continue;
+    const branchOffers = (offersByBranch.get(String(branch._id)) || []).filter((offer) => {
+      const availability = availabilityOf(offer, now);
+      return availability === "active" || availability === "scheduled";
+    });
+    if (!branchOffers.length) continue;
+    if (input.q) {
+      const query = input.q.toLowerCase();
+      if (!business.businessName.toLowerCase().includes(query) && !branch.branchName.toLowerCase().includes(query)) {
+        // keep if branch filter already matched area/city
+      }
+    }
+    await ensureBranchSlug(branch);
+    const topOffer = [...branchOffers].sort((a, b) => discountScore(b) - discountScore(a))[0];
+    stores.push(
+      toStoreDto({
+        branch,
+        business,
+        categoryName: names.get(business.category),
+        offerCount: branchOffers.length,
+        itemCount: branchOffers.reduce((sum, offer) => sum + (offer.items?.length || 0), 0),
+        topOffer,
+      }),
+    );
+  }
+  return paginate(stores, input.page, input.limit);
+}
+
+export async function getPublicStoreBySlug(slug: string) {
+  if (isPreviewMode()) return null;
+  await connectDB();
+  const byId = Types.ObjectId.isValid(slug) ? await BranchModel.findOne({ _id: slug, isActive: true }).lean() : null;
+  const branch = byId || (await BranchModel.findOne({ slug, isActive: true }).lean());
+  if (!branch) return null;
+  await ensureBranchSlug(branch);
+  const business = await BusinessModel.findOne({ _id: branch.businessId, isActive: true }).lean();
+  if (!business) return null;
+  // Load offers by branch id (never by a shared/colliding slug).
+  const offers = await listPublicOffers({ page: 1, limit: 50, branchId: String(branch._id), sort: "newest" });
+  const names = await categoryNames();
+  const store = toStoreDto({
+    branch,
+    business,
+    categoryName: names.get(business.category),
+    offerCount: offers.total,
+    itemCount: offers.items.reduce((sum, offer) => sum + (offer.items?.length || 0), 0),
+    topOffer: null,
+    distanceKm: undefined,
+  });
+  if (offers.items[0]) {
+    store.topDiscountLabel = offers.items[0].discountLabel;
+    store.posterUrl = offers.items[0].posterUrl || store.posterUrl;
+  }
+  return { store, offers: offers.items };
 }
 
 export async function listSitemapEntries() {

@@ -1,18 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { TrackPageView } from "@/components/analytics/site-tracker";
-import { OfferGrid } from "@/components/customer/offer-card";
-import { OffersFilters } from "@/components/customer/offers-filters";
 import { NearbyOffers } from "@/components/customer/nearby";
+import { OffersFilters } from "@/components/customer/offers-filters";
+import { StoreGrid } from "@/components/customer/store-card";
 import { SetupNotice } from "@/components/seo";
 import { EmptyState, Pagination, pageQuery } from "@/components/ui/primitives";
 import { firstParam } from "@/lib/api-client";
 import { loadPage } from "@/lib/page";
 import { listCategories } from "@/services/catalog.service";
-import { listPublicOffers } from "@/services/offer.service";
-import { OFFER_TYPES, type OfferType } from "@/types/domain";
+import { listPublicStores } from "@/services/offer.service";
 
-export const metadata: Metadata = { title: "Offers", description: "Browse active local offers by category, discount, and city." };
+export const metadata: Metadata = {
+  title: "Offers",
+  description: "Browse nearby stores and branches, then open a store to see products and offers.",
+};
 
 const DEFAULT_RADIUS_KM = 5;
 
@@ -22,30 +24,23 @@ export default async function OffersPage({ searchParams }: { searchParams: Promi
     q: firstParam(params.q),
     category: firstParam(params.category),
     city: firstParam(params.city),
-    area: firstParam(params.area),
     offerType: firstParam(params.offerType),
     sort: firstParam(params.sort) || "newest",
     currentlyAvailable: firstParam(params.currentlyAvailable),
   };
   const page = Number(firstParam(params.page) || 1);
-  const discountMin = firstParam(params.discountMin);
   const loaded = await loadPage(async () => {
-    const [categories, offers] = await Promise.all([
+    const [categories, stores] = await Promise.all([
       listCategories(false),
-      listPublicOffers({
+      listPublicStores({
         page,
         limit: 12,
         q: query.q,
         category: query.category,
         city: query.city,
-        area: query.area,
-        offerType: OFFER_TYPES.includes(query.offerType as OfferType) ? (query.offerType as OfferType) : undefined,
-        sort: query.sort === "discount" || query.sort === "ending" ? query.sort : "newest",
-        currentlyAvailable: query.currentlyAvailable === "true",
-        discountMin: discountMin ? Number(discountMin) : undefined,
       }),
     ]);
-    return { categories, offers };
+    return { categories, stores };
   });
   if (!loaded.ok) {
     return (
@@ -65,17 +60,25 @@ export default async function OffersPage({ searchParams }: { searchParams: Promi
           category: query.category,
           city: query.city,
           offerType: query.offerType,
-          discountMin,
+          discountMin: firstParam(params.discountMin),
           sort: query.sort,
           currentlyAvailable: query.currentlyAvailable,
         }}
       />
-      {loaded.data.offers.items.length ? (
-        <OfferGrid offers={loaded.data.offers.items} />
-      ) : (
-        <EmptyState title="No matching offers" body="Try another category, city, or clear the filters." action={<Link href="/offers">Clear filters</Link>} />
-      )}
-      <Pagination page={loaded.data.offers.page} totalPages={loaded.data.offers.totalPages} hrefFor={(nextPage) => pageQuery("/offers", query, nextPage)} />
+      <section className="space-y-4">
+        <h2 className="display text-3xl">Stores with offers</h2>
+        <p className="text-sm text-muted-foreground">Pick a branch to see its offers and product list. Redemption codes stay branch/offer based.</p>
+        {loaded.data.stores.items.length ? (
+          <StoreGrid stores={loaded.data.stores.items} />
+        ) : (
+          <EmptyState title="No matching stores" body="Try another city or clear the filters." action={<Link href="/offers">Clear filters</Link>} />
+        )}
+        <Pagination
+          page={loaded.data.stores.page}
+          totalPages={loaded.data.stores.totalPages}
+          hrefFor={(nextPage) => pageQuery("/offers", { q: query.q, category: query.category, city: query.city }, nextPage)}
+        />
+      </section>
     </div>
   );
 }

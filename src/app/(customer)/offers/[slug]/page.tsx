@@ -74,7 +74,15 @@ export default async function OfferPage({ params }: { params: Promise<{ slug: st
     <article className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[1.2fr_0.8fr]">
       <JsonLd data={jsonLd} />
       <div className="space-y-4">
-        <p className="text-sm text-muted-foreground"><Link href="/offers">Offers</Link> / <Link href={`/categories/${offer.business.category}`}>{offer.business.categoryName || offer.business.category}</Link></p>
+        <p className="text-sm text-muted-foreground">
+          <Link href="/offers">Offers</Link>
+          {" / "}
+          <Link href={`/categories/${offer.business.category}`}>{offer.business.categoryName || offer.business.category}</Link>
+          <>
+            {" / "}
+            <Link href={`/stores/${offer.branch.id}`}>{offer.branch.branchName}</Link>
+          </>
+        </p>
         <div className="overflow-hidden rounded-3xl border border-border">
           {offer.posterUrl ? <Image src={offer.posterUrl} alt={`${offer.title} promotional poster`} width={1200} height={900} className="aspect-[4/3] w-full object-cover" /> : (
             <OfferPoster title={offer.title} businessName={offer.business.businessName} discountLabel={offer.discountLabel} validUntil={offer.validUntil} address={address} originalPrice={offer.originalPrice} discountedPrice={offer.discountedPrice} layout={offer.template?.layoutConfig} backgroundUrl={offer.template?.backgroundUrl} className="min-h-80" />
@@ -87,6 +95,24 @@ export default async function OfferPage({ params }: { params: Promise<{ slug: st
         {offer.originalPrice != null || offer.discountedPrice != null ? (
           <p className="text-lg">{offer.originalPrice != null ? <span className="mr-3 text-muted-foreground line-through">{formatMoney(offer.originalPrice)}</span> : null}{offer.discountedPrice != null ? formatMoney(offer.discountedPrice) : null}</p>
         ) : null}
+        {offer.items.length ? (
+          <section className="space-y-2">
+            <h2 className="font-semibold">Products in this offer</h2>
+            <p className="text-xs text-muted-foreground">Prices are listed by product. Your redemption code covers this whole offer at this branch.</p>
+            <ul className="divide-y divide-border rounded-2xl border border-border">
+              {offer.items.map((item) => (
+                <li key={`${item.name}-${item.sortOrder}`} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
+                  <span className="font-medium">{item.name}</span>
+                  <span>
+                    {item.discountedPrice != null ? formatMoney(item.discountedPrice) : null}
+                    {item.originalPrice != null ? <span className="ml-2 text-muted-foreground line-through">{formatMoney(item.originalPrice)}</span> : null}
+                    {item.discountPercent != null ? <span className="ml-2 text-primary">{item.discountPercent}% off</span> : null}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
         <dl className="grid gap-2 text-sm sm:grid-cols-2">
           <div><dt className="text-muted-foreground">Valid</dt><dd>{formatDate(offer.validFrom, offer.timezone)} – {formatDate(offer.validUntil, offer.timezone)}</dd></div>
           <div><dt className="text-muted-foreground">Hours</dt><dd>{offer.startTime && offer.endTime ? `${offer.startTime}–${offer.endTime}` : "Any time during open days"}</dd></div>
@@ -97,7 +123,9 @@ export default async function OfferPage({ params }: { params: Promise<{ slug: st
       <aside className="space-y-4">
         <div className="rounded-2xl border border-border bg-card p-4">
           <Link href={`/businesses/${offer.business.slug}`} className="text-lg font-semibold">{offer.business.businessName}</Link>
-          <p className="mt-1 text-sm">{offer.branch.branchName}</p>
+          <p className="mt-1 text-sm">
+            <Link href={`/stores/${offer.branch.id}`}>{offer.branch.branchName}</Link>
+          </p>
           <p className="mt-2 text-sm text-muted-foreground">{address}</p>
           <div className="mt-3"><DirectionsLink latitude={offer.branch.latitude} longitude={offer.branch.longitude} /></div>
           <div className="mt-4 space-y-3">

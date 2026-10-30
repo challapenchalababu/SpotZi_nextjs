@@ -181,9 +181,11 @@ export async function setBusinessActive(actorId: string, businessId: string, isA
 
 export async function createBranch(ownerId: string, input: BranchInput): Promise<BranchDTO> {
   const business = await requireOwnedBusiness(ownerId, input.businessId);
+  const slug = await uniqueSlug(BranchModel, "slug", `${input.branchName}-${input.address.area}-${input.address.city}`);
   const branch = await BranchModel.create({
     businessId: business._id,
     branchName: input.branchName.trim(),
+    slug,
     address: {
       line1: input.address.line1.trim(),
       line2: blank(input.address.line2),
@@ -215,6 +217,9 @@ export async function updateBranch(ownerId: string, branchId: string, input: Bra
     throw new AppError(400, "invalid_business", "A branch cannot be moved to another business.");
   }
   branch.branchName = input.branchName.trim();
+  if (!branch.slug) {
+    branch.slug = await uniqueSlug(BranchModel, "slug", `${input.branchName}-${input.address.area}-${input.address.city}`);
+  }
   branch.address = {
     line1: input.address.line1.trim(),
     line2: blank(input.address.line2),

@@ -113,6 +113,7 @@ export interface BranchDTO {
   businessId: string;
   businessName?: string;
   branchName: string;
+  slug?: string;
   address: Address;
   latitude: number;
   longitude: number;
@@ -121,6 +122,41 @@ export interface BranchDTO {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface OfferItemDTO {
+  name: string;
+  originalPrice?: number;
+  discountedPrice?: number;
+  discountPercent?: number;
+  discountValue?: number;
+  posterUrl?: string;
+  sortOrder: number;
+}
+
+export interface OfferProductInput {
+  name: string;
+  discountValue?: number;
+  originalPrice?: number;
+  discountedPrice?: number;
+  posterUrl?: string;
+}
+
+export interface PublicStoreDTO {
+  id: string;
+  slug: string;
+  branchName: string;
+  address: Address;
+  latitude: number;
+  longitude: number;
+  phone?: string;
+  openingHours: OpeningHours;
+  offerCount: number;
+  itemCount: number;
+  topDiscountLabel?: string;
+  posterUrl?: string;
+  distanceKm?: number;
+  business: PublicBusinessRef;
 }
 
 export interface TemplateDTO {
@@ -151,6 +187,7 @@ export interface PublicBusinessRef {
 export interface PublicBranchRef {
   id: string;
   branchName: string;
+  slug?: string;
   address: Address;
   latitude: number;
   longitude: number;
@@ -167,6 +204,7 @@ export interface PublicOfferDTO {
   discountValue?: number;
   originalPrice?: number;
   discountedPrice?: number;
+  items: OfferItemDTO[];
   discountLabel: string;
   posterUrl?: string;
   validFrom: string;

@@ -184,6 +184,7 @@ function toPublic(record: ReturnType<typeof offerRecord>, distanceKm?: number): 
     discountValue: offer.discountValue,
     originalPrice: offer.originalPrice,
     discountedPrice: offer.discountedPrice,
+    items: [],
     discountLabel: discountLabel(offer),
     validFrom: rangeStart.toISOString(),
     validUntil: rangeEnd.toISOString(),

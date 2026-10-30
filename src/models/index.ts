@@ -123,6 +123,7 @@ export interface BranchRecord {
   _id: Types.ObjectId;
   businessId: Types.ObjectId;
   branchName: string;
+  slug?: string;
   address: Address;
   location: { type: "Point"; coordinates: [number, number] };
   openingHours: OpeningHours;
@@ -136,6 +137,7 @@ const branchSchema = new Schema<BranchRecord>(
   {
     businessId: { type: Schema.Types.ObjectId, ref: "Business", required: true },
     branchName: { type: String, required: true, trim: true, maxlength: 80 },
+    slug: { type: String, unique: true, sparse: true },
     address: { type: addressSchema, required: true },
     location: { type: pointSchema, required: true },
     openingHours: {
@@ -185,6 +187,29 @@ const templateSchema = new Schema<TemplateRecord>(
   { timestamps: true, collection: "offerTemplates" },
 );
 
+export interface OfferItemRecord {
+  name: string;
+  originalPrice?: number;
+  discountedPrice?: number;
+  discountPercent?: number;
+  discountValue?: number;
+  posterUrl?: string;
+  sortOrder: number;
+}
+
+const offerItemSchema = new Schema<OfferItemRecord>(
+  {
+    name: { type: String, required: true, trim: true, maxlength: 120 },
+    originalPrice: { type: Number },
+    discountedPrice: { type: Number },
+    discountPercent: { type: Number },
+    discountValue: { type: Number },
+    posterUrl: { type: String },
+    sortOrder: { type: Number, default: 0 },
+  },
+  { _id: false },
+);
+
 export interface OfferRecord {
   _id: Types.ObjectId;
   businessId: Types.ObjectId;
@@ -197,6 +222,7 @@ export interface OfferRecord {
   discountValue?: number;
   originalPrice?: number;
   discountedPrice?: number;
+  items: OfferItemRecord[];
   posterUrl?: string;
   validFrom: Date;
   validUntil: Date;
@@ -225,6 +251,7 @@ const offerSchema = new Schema<OfferRecord>(
     discountValue: { type: Number },
     originalPrice: { type: Number },
     discountedPrice: { type: Number },
+    items: { type: [offerItemSchema], default: [] },
     posterUrl: { type: String },
     validFrom: { type: Date, required: true },
     validUntil: { type: Date, required: true },
