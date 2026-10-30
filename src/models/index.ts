@@ -401,6 +401,63 @@ const rateLimitSchema = new Schema<RateLimitRecord>({
   hits: { type: [Date], default: [] },
 });
 
+export interface SiteTrafficCounterRecord {
+  _id: string;
+  totalHits: number;
+  uniqueVisitors: number;
+  updatedAt: Date;
+}
+
+const siteTrafficCounterSchema = new Schema<SiteTrafficCounterRecord>(
+  {
+    _id: { type: String, required: true },
+    totalHits: { type: Number, default: 0 },
+    uniqueVisitors: { type: Number, default: 0 },
+  },
+  { timestamps: { createdAt: false, updatedAt: true }, collection: "siteTrafficCounters" },
+);
+
+export interface SiteTrafficDailyRecord {
+  _id: Types.ObjectId;
+  day: string;
+  event: string;
+  hits: number;
+  uniqueVisitors: number;
+  updatedAt: Date;
+}
+
+const siteTrafficDailySchema = new Schema<SiteTrafficDailyRecord>(
+  {
+    day: { type: String, required: true },
+    event: { type: String, required: true },
+    hits: { type: Number, default: 0 },
+    uniqueVisitors: { type: Number, default: 0 },
+  },
+  { timestamps: { createdAt: false, updatedAt: true }, collection: "siteTrafficDaily" },
+);
+siteTrafficDailySchema.index({ day: 1, event: 1 }, { unique: true });
+siteTrafficDailySchema.index({ event: 1, day: -1 });
+
+export interface SiteUniqueVisitRecord {
+  _id: Types.ObjectId;
+  event: string;
+  visitorKey: string;
+  day: string;
+  createdAt: Date;
+}
+
+const siteUniqueVisitSchema = new Schema<SiteUniqueVisitRecord>(
+  {
+    event: { type: String, required: true },
+    visitorKey: { type: String, required: true },
+    day: { type: String, required: true },
+    createdAt: { type: Date, default: () => new Date() },
+  },
+  { collection: "siteUniqueVisits" },
+);
+siteUniqueVisitSchema.index({ event: 1, visitorKey: 1, day: 1 }, { unique: true });
+siteUniqueVisitSchema.index({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 90 });
+
 export interface PlatformSettingsRecord {
   _id: string;
   supportEmail: string;
@@ -433,6 +490,9 @@ export const ActivityLogModel = model("ActivityLog", activitySchema);
 export const CategoryModel = model("Category", categorySchema);
 export const PasswordResetModel = model("PasswordReset", passwordResetSchema);
 export const RateLimitModel = model("RateLimit", rateLimitSchema);
+export const SiteTrafficCounterModel = model("SiteTrafficCounter", siteTrafficCounterSchema);
+export const SiteTrafficDailyModel = model("SiteTrafficDaily", siteTrafficDailySchema);
+export const SiteUniqueVisitModel = model("SiteUniqueVisit", siteUniqueVisitSchema);
 export const PlatformSettingsModel = model("PlatformSettings", platformSettingsSchema);
 
 export async function ensureModelIndexes() {
@@ -449,6 +509,9 @@ export async function ensureModelIndexes() {
     CategoryModel.createIndexes(),
     PasswordResetModel.createIndexes(),
     RateLimitModel.createIndexes(),
+    SiteTrafficCounterModel.createIndexes(),
+    SiteTrafficDailyModel.createIndexes(),
+    SiteUniqueVisitModel.createIndexes(),
     PlatformSettingsModel.createIndexes(),
   ]);
 }

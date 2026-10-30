@@ -16,8 +16,10 @@ import {
   UtensilsCrossed,
   type LucideIcon,
 } from "lucide-react";
-import { LandingHeader } from "@/components/marketing/landing-header";
+import { TrackPageView } from "@/components/analytics/site-tracker";
 import { BrandMark } from "@/components/brand-mark";
+import { LandingHeader } from "@/components/marketing/landing-header";
+import { BusinessLoginCta, FindOffersCta } from "@/components/marketing/tracked-ctas";
 
 export const metadata: Metadata = {
   title: { absolute: "SpotZi | Nearby Deals. Happier You." },
@@ -60,27 +62,10 @@ const ownerBenefits = [
   "Review redemptions and customer reports.",
 ];
 
-function FindOffersLink({ className = "" }: { className?: string }) {
-  return (
-    <Link href="/offers" className={`inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#FF6B32] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e85d28] sm:w-auto ${className}`}>
-      <Search className="size-4" aria-hidden="true" />
-      Find Offers
-    </Link>
-  );
-}
-
-function BusinessLink({ label, solid = false, className = "" }: { label: string; solid?: boolean; className?: string }) {
-  return (
-    <Link href="/owner/login" className={`inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition sm:w-auto ${solid ? "bg-[#168747] text-white hover:bg-[#12753d]" : "border border-[#168747] bg-white text-[#168747] hover:bg-[#168747]/10"} ${className}`}>
-      <Store className="size-4" aria-hidden="true" />
-      {label}
-    </Link>
-  );
-}
-
 export default function LandingPage() {
   return (
     <div className="landing min-h-screen bg-[#F5FAF7] text-[#103B3A]">
+      <TrackPageView event="landing_view" />
       <LandingHeader />
       <main id="content">
         <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 lg:grid-cols-[1.1fr_0.9fr] lg:py-16">
@@ -89,8 +74,8 @@ export default function LandingPage() {
             <h1 className="mt-3 max-w-xl text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">Great deals are closer than you think.</h1>
             <p className="mt-4 max-w-xl text-base leading-7 text-[#103B3A]/80">Discover offers from nearby restaurants, cafés, supermarkets, clothing stores, and your favorite local shops. Find today&apos;s deals and enjoy more savings around you.</p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <FindOffersLink />
-              <BusinessLink label="Have a Business?" />
+              <FindOffersCta />
+              <BusinessLoginCta label="Have a Business?" />
             </div>
           </div>
           <div className="relative mx-auto w-full max-w-md" aria-hidden="true">
@@ -165,7 +150,7 @@ export default function LandingPage() {
               <h2 className="text-2xl font-semibold sm:text-3xl">Own a local business?</h2>
               <p className="mt-3 max-w-xl leading-7 text-[#103B3A]/80">Bring your offers closer to customers. Create promotions, manage your business branches, and help nearby shoppers discover what you offer.</p>
               <div className="mt-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-                <BusinessLink label="Grow Your Business" solid />
+                <BusinessLoginCta label="Grow Your Business" solid />
                 <Link href="/owner/login" className="text-sm font-semibold text-[#168747] underline-offset-4 hover:underline">Already registered? Log in</Link>
               </div>
             </div>
@@ -198,8 +183,8 @@ export default function LandingPage() {
             <h2 className="text-2xl font-semibold sm:text-3xl">Your next great deal is nearby.</h2>
             <p className="mx-auto mt-3 max-w-xl text-[#103B3A]/80">Start exploring local offers and discover more ways to save.</p>
             <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <FindOffersLink />
-              <BusinessLink label="List Your Business" />
+              <FindOffersCta />
+              <BusinessLoginCta label="List Your Business" />
             </div>
           </div>
         </section>

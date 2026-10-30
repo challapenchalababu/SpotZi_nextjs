@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { TrackPageView } from "@/components/analytics/site-tracker";
 import { BrandMark } from "@/components/brand-mark";
 import { LoginForm } from "@/components/forms/auth-forms";
 import { getSession } from "@/lib/session";
@@ -12,6 +13,7 @@ export default async function OwnerIndex({ searchParams }: { searchParams: Promi
   const forbidden = (await searchParams).error === "forbidden";
   return (
     <div className="mx-auto max-w-md px-4 py-16">
+      <TrackPageView event="business_login_view" />
       <Link href="/" aria-label="SpotZi home" className="mb-6 inline-flex"><BrandMark priority /></Link>
       <p className="text-sm uppercase tracking-[0.16em] text-muted-foreground">Business owner</p>
       <h1 className="display mt-2 text-4xl">Owner login</h1>

@@ -3,14 +3,16 @@ import { StatGrid } from "@/components/dashboard/stats";
 import { formatDateTime } from "@/lib/format";
 import { adminStats, recentRegistrations } from "@/services/admin.service";
 import { listActivity } from "@/services/activity.service";
+import { getSiteTrafficSummary } from "@/services/site-traffic.service";
 
 export const metadata = { title: "Platform dashboard" };
 
 export default async function AdminDashboardPage() {
-  const [stats, recent, activity] = await Promise.all([
+  const [stats, recent, activity, traffic] = await Promise.all([
     adminStats(),
     recentRegistrations(6),
     listActivity(1, 6),
+    getSiteTrafficSummary(7),
   ]);
   return (
     <div className="space-y-6">
@@ -26,6 +28,20 @@ export default async function AdminDashboardPage() {
         { label: "Redemptions", value: stats.redemptions },
         { label: "Open reports", value: stats.openReports },
       ]} />
+      <section className="space-y-3">
+        <div className="flex items-end justify-between gap-3">
+          <h2 className="text-xl font-semibold">Public site traffic</h2>
+          <Link className="text-sm font-semibold text-primary" href="/super-admin/traffic">View details</Link>
+        </div>
+        <StatGrid
+          items={[
+            { label: "Website opens", value: traffic.totals.landing_view.hits, href: "/super-admin/traffic" },
+            { label: "Find Offers clicks", value: traffic.totals.find_offers_click.hits, href: "/super-admin/traffic" },
+            { label: "Offers page visits", value: traffic.totals.offers_page_view.hits, href: "/super-admin/traffic" },
+            { label: "Business login visits", value: traffic.totals.business_login_view.hits, href: "/super-admin/traffic" },
+          ]}
+        />
+      </section>
       <section>
         <h2 className="text-xl font-semibold">Recent registrations</h2>
         <ul className="mt-3 divide-y divide-border rounded-2xl border border-border bg-card">

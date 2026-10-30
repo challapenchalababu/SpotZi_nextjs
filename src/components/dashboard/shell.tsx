@@ -121,6 +121,7 @@ const adminNav: Array<{ href: string; label: string; icon: keyof typeof icons }>
   { href: "/super-admin/templates", label: "Templates", icon: "templates" },
   { href: "/super-admin/reports", label: "Reports", icon: "reports" },
   { href: "/super-admin/activity-logs", label: "Activity", icon: "activity" },
+  { href: "/super-admin/traffic", label: "Site traffic", icon: "analytics" },
   { href: "/super-admin/revenue", label: "Revenue", icon: "analytics" },
   { href: "/super-admin/subscriptions", label: "Subscriptions", icon: "analytics" },
   { href: "/super-admin/profile", label: "Profile", icon: "users" },
