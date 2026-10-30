@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button, Dialog, Field, Notice, fieldClass } from "@/components/ui/primitives";
 import { api } from "@/lib/api-client";
 import { forgotSchema, loginSchema, registerSchema, resetSchema, type LoginInput, type RegisterInput } from "@/validators";
@@ -26,7 +27,7 @@ export function LoginForm({ portal, nextPath, forbidden }: { portal: LoginInput[
       {forbidden ? <Notice tone="warning">That account cannot open this area.</Notice> : null}
       {error ? <Notice tone="warning">{error}</Notice> : null}
       <Field label="Email" error={form.formState.errors.email?.message}><input className={fieldClass} type="email" autoComplete="email" {...form.register("email")} /></Field>
-      <Field label="Password" error={form.formState.errors.password?.message}><input className={fieldClass} type="password" autoComplete="current-password" {...form.register("password")} /></Field>
+      <PasswordInput label="Password" error={form.formState.errors.password?.message} autoComplete="current-password" {...form.register("password")} />
       <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? "Signing in…" : "Sign in"}</Button>
     </form>
   );
@@ -51,7 +52,7 @@ export function RegisterForm({ accountType }: { accountType: "customer" | "owner
       <Field label="Name" error={form.formState.errors.name?.message}><input className={fieldClass} autoComplete="name" {...form.register("name")} /></Field>
       <Field label="Email" error={form.formState.errors.email?.message}><input className={fieldClass} type="email" autoComplete="email" {...form.register("email")} /></Field>
       <Field label="Phone" error={form.formState.errors.phone?.message}><input className={fieldClass} autoComplete="tel" {...form.register("phone")} /></Field>
-      <Field label="Password" error={form.formState.errors.password?.message}><input className={fieldClass} type="password" autoComplete="new-password" {...form.register("password")} /></Field>
+      <PasswordInput label="Password" error={form.formState.errors.password?.message} autoComplete="new-password" {...form.register("password")} />
       <Button type="submit" disabled={form.formState.isSubmitting}>Create account</Button>
     </form>
   );
@@ -94,7 +95,7 @@ export function ResetForm({ token, redirectTo = "/login" }: { token: string; red
       }
     })}>
       {error ? <Notice tone="warning">{error}</Notice> : null}
-      <Field label="New password" error={form.formState.errors.password?.message}><input className={fieldClass} type="password" autoComplete="new-password" {...form.register("password")} /></Field>
+      <PasswordInput label="New password" error={form.formState.errors.password?.message} autoComplete="new-password" {...form.register("password")} />
       <Button type="submit" disabled={form.formState.isSubmitting}>Update password</Button>
     </form>
   );

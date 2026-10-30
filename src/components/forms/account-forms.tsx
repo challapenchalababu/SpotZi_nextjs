@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button, Field, Notice, fieldClass } from "@/components/ui/primitives";
 import { api } from "@/lib/api-client";
 import { changePasswordSchema, profileSchema, settingsSchema } from "@/validators";
@@ -48,8 +49,8 @@ export function PasswordForm() {
       }
     })}>
       {message ? <Notice>{message}</Notice> : null}
-      <Field label="Current password" error={form.formState.errors.currentPassword?.message}><input className={fieldClass} type="password" {...form.register("currentPassword")} /></Field>
-      <Field label="New password" error={form.formState.errors.newPassword?.message}><input className={fieldClass} type="password" {...form.register("newPassword")} /></Field>
+      <PasswordInput label="Current password" error={form.formState.errors.currentPassword?.message} autoComplete="current-password" {...form.register("currentPassword")} />
+      <PasswordInput label="New password" error={form.formState.errors.newPassword?.message} autoComplete="new-password" {...form.register("newPassword")} />
       <Button type="submit">Change password</Button>
     </form>
   );

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, Outfit } from "next/font/google";
 import { AppLoader } from "@/components/ui/app-loader";
 import { APP_NAME, getAppUrl } from "@/lib/env";
+import { SPOTZI_LOADER_URL } from "@/lib/loader-asset";
 import "./globals.css";
 
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
@@ -26,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${outfit.variable} ${fraunces.variable} h-full`}>
       <head>
-        <link rel="preload" href="/logo_loader.webp" as="image" type="image/webp" />
+        <link rel="preload" href={SPOTZI_LOADER_URL} as="image" type="image/gif" />
       </head>
       <body className="min-h-full bg-background text-foreground antialiased">
         <svg aria-hidden="true" className="absolute h-0 w-0" focusable="false">

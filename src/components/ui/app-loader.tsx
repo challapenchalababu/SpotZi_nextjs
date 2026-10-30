@@ -2,26 +2,9 @@
 
 import { Suspense, useEffect, useSyncExternalStore } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import { SpotZiLoaderOverlay } from "@/components/ui/spotzi-loader";
 import { apiActivityCount, subscribeApiActivity } from "@/lib/api-client";
 import { beginNavigation, endNavigation, navigationActivityCount, subscribeNavigationActivity } from "@/lib/navigation-activity";
-
-function LoaderOverlay() {
-  return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#c1c8c8]/45 backdrop-blur-[1px]" role="status" aria-live="polite" aria-busy="true">
-      <picture>
-        <source srcSet="/logo_loader.webp" type="image/webp" />
-        <img
-          src="/logo_loader.gif"
-          alt="Loading SpotZi"
-          width={400}
-          height={225}
-          className="h-64 w-auto max-w-[min(94vw,40rem)] bg-transparent object-contain sm:h-72 md:h-80"
-        />
-      </picture>
-      <span className="sr-only">Loading</span>
-    </div>
-  );
-}
 
 function AppLoaderInner() {
   const pathname = usePathname();
@@ -75,7 +58,7 @@ function AppLoaderInner() {
   }, []);
 
   if (apiPending === 0 && navPending === 0) return null;
-  return <LoaderOverlay />;
+  return <SpotZiLoaderOverlay />;
 }
 
 export function AppLoader() {
