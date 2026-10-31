@@ -16,6 +16,7 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
     <div className="space-y-4">
       <h1 className="display text-4xl">{user.name}</h1>
       <p>{user.email}</p>
+      <p>{user.phone || "No phone number on file"}</p>
       <p className="text-sm text-muted-foreground">{user.role} · joined {formatDateTime(user.createdAt)}</p>
       <Badge tone={user.isActive ? "success" : "warning"}>{user.isActive ? "Enabled" : "Disabled"}</Badge>
       <ConfirmButton endpoint={`/api/admin/users/${user.id}`} body={{ isActive: !user.isActive }} label={user.isActive ? "Disable account" : "Enable account"} confirm="Update this account status?" />

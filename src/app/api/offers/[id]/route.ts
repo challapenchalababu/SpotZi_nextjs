@@ -1,5 +1,5 @@
 import { jsonOk, parseSchema, readJson, withApi } from "@/lib/http";
-import { archiveOffer, getManagedOffer, setOfferStatus, updateOffer } from "@/services/offer.service";
+import { deleteOffer, getManagedOffer, setOfferStatus, updateOffer } from "@/services/offer.service";
 import { getSession, requireRoles } from "@/lib/session";
 import { offerStatusSchema, updateOfferSchema } from "@/validators";
 
@@ -25,5 +25,5 @@ export const PATCH = withApi<{ id: string }>(async (request, context) => {
 export const DELETE = withApi<{ id: string }>(async (_request, context) => {
   const { id } = await context.params;
   const owner = await requireRoles(["owner"]);
-  return jsonOk(await archiveOffer(owner.id, id));
+  return jsonOk(await deleteOffer(owner.id, id));
 });

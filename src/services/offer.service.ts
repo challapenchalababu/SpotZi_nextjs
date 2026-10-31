@@ -20,6 +20,7 @@ import {
   OfferModel,
   OfferTemplateModel,
   RedemptionModel,
+  ReportModel,
   type BranchRecord,
   type BusinessRecord,
   type OfferRecord,
@@ -325,6 +326,26 @@ export async function setOfferStatus(actorId: string, offerId: string, status: O
 
 export async function archiveOffer(ownerId: string, offerId: string) {
   return setOfferStatus(ownerId, offerId, "archived");
+}
+
+/** Permanently removes the offer and related customer data from the database. */
+export async function deleteOffer(ownerId: string, offerId: string) {
+  const { offer } = await requireOwnedOffer(ownerId, offerId);
+  const id = offer._id;
+  await Promise.all([
+    FavoriteModel.deleteMany({ offerId: id }),
+    RedemptionModel.deleteMany({ offerId: id }),
+    ReportModel.deleteMany({ offerId: id }),
+  ]);
+  await OfferModel.deleteOne({ _id: id });
+  await logActivity({
+    actorId: ownerId,
+    action: "offer.delete",
+    resourceType: "offer",
+    resourceId: String(id),
+    metadata: { title: offer.title },
+  });
+  return { id: String(id), deleted: true as const };
 }
 
 async function ensureBranchSlug(branch: BranchRecord) {

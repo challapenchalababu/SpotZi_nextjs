@@ -101,7 +101,23 @@ export function ResetForm({ token, redirectTo = "/login" }: { token: string; red
   );
 }
 
-export function ConfirmButton({ endpoint, method = "PATCH", body, label, confirm, variant = "secondary" }: { endpoint: string; method?: "PATCH" | "DELETE" | "POST"; body?: object; label: string; confirm: string; variant?: "secondary" | "danger" | "primary" }) {
+export function ConfirmButton({
+  endpoint,
+  method = "PATCH",
+  body,
+  label,
+  confirm,
+  variant = "secondary",
+  redirectTo,
+}: {
+  endpoint: string;
+  method?: "PATCH" | "DELETE" | "POST";
+  body?: object;
+  label: string;
+  confirm: string;
+  variant?: "secondary" | "danger" | "primary";
+  redirectTo?: string;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -120,7 +136,12 @@ export function ConfirmButton({ endpoint, method = "PATCH", body, label, confirm
             try {
               await api(endpoint, { method, body: body ? JSON.stringify(body) : undefined });
               setOpen(false);
-              router.refresh();
+              if (redirectTo) {
+                router.push(redirectTo);
+                router.refresh();
+              } else {
+                router.refresh();
+              }
             } catch (caught) {
               setError(caught instanceof Error ? caught.message : "Could not complete that action.");
             } finally {

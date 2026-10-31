@@ -47,7 +47,7 @@ export default async function OwnerOffersPage({ searchParams }: { searchParams: 
                 <td className="py-3">
                   <div className="flex flex-wrap gap-2">
                     <Link className="rounded-full border border-border px-3 py-1 text-sm" href={`/owner/offers/${offer.id}/edit`}>Edit</Link>
-                    {offer.status !== "archived" ? <ConfirmButton endpoint={`/api/offers/${offer.id}`} method="DELETE" label="Delete" confirm="This removes the offer from customer listings. The record stays in your history as archived." variant="danger" /> : null}
+                    <ConfirmButton endpoint={`/api/offers/${offer.id}`} method="DELETE" label="Delete" confirm="Permanently delete this offer from the database? Related saves, claims, and reports for this offer are removed too. This cannot be undone." variant="danger" />
                   </div>
                 </td>
               </tr>

@@ -42,12 +42,23 @@ export async function UserDirectory({
       </form>
       <div className="overflow-x-auto rounded-2xl border border-border bg-card">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-border text-muted-foreground"><tr><th className="px-4 py-3">Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Status</th><th></th></tr></thead>
+          <thead className="border-b border-border text-muted-foreground">
+            <tr>
+              <th className="px-4 py-3">Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Role</th>
+              <th>Joined</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
           <tbody>
             {users.items.map((user) => (
               <tr key={user.id} className="border-b border-border last:border-0">
                 <td className="px-4 py-3"><Link href={`/super-admin/users/${user.id}`}>{user.name}</Link></td>
                 <td>{user.email}</td>
+                <td>{user.phone || "—"}</td>
                 <td>{user.role}</td>
                 <td>{formatDateTime(user.createdAt)}</td>
                 <td><Badge tone={user.isActive ? "success" : "warning"}>{user.isActive ? "Enabled" : "Disabled"}</Badge></td>

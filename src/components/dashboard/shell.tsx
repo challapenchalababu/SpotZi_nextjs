@@ -90,6 +90,14 @@ export function DashboardShell({
         </header>
         {preview ? <p className="bg-[#f4c95d] px-4 py-2 text-center text-sm text-[#142421]">Sample data from src/data/preview.json. Connect MongoDB before saving changes.</p> : null}
         <div className="mx-auto max-w-6xl space-y-6 px-4 py-6">{children}</div>
+        {area === "owner" ? (
+          <footer className="border-t border-border px-4 py-4 text-center text-sm text-muted-foreground">
+            Need help? Contact admin at{" "}
+            <a className="font-semibold text-primary hover:underline" href="mailto:penchalababuchalla@gmail.com">
+              penchalababuchalla@gmail.com
+            </a>
+          </footer>
+        ) : null}
       </div>
     </div>
   );

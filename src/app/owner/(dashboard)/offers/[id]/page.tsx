@@ -37,7 +37,7 @@ export default async function OwnerOfferPage({ params }: { params: Promise<{ id:
       <div className="flex flex-wrap gap-2">
         {offer.status !== "published" ? <ConfirmButton endpoint={`/api/offers/${offer.id}`} body={{ status: "published" }} label="Publish" confirm="Publish this offer if its dates and terms are ready." /> : null}
         {offer.status === "published" ? <ConfirmButton endpoint={`/api/offers/${offer.id}`} body={{ status: "paused" }} label="Pause" confirm="Paused offers disappear from public listings." /> : null}
-        {offer.status !== "archived" ? <ConfirmButton endpoint={`/api/offers/${offer.id}`} method="DELETE" label="Archive" confirm="Archived offers stay in your history and leave public listings." variant="danger" /> : null}
+        <ConfirmButton endpoint={`/api/offers/${offer.id}`} method="DELETE" label="Delete" confirm="Permanently delete this offer from the database? Related saves, claims, and reports for this offer are removed too. This cannot be undone." variant="danger" redirectTo="/owner/offers" />
       </div>
     </div>
   );
