@@ -17,7 +17,9 @@ function blankRow(): Draft {
   return { name: "", discountValue: "", originalPrice: "", discountedPrice: "", posterUrl: "" };
 }
 
-function fromValue(products?: OfferProductInput[] | null): Draft[] {
+type ProductValue = Partial<OfferProductInput> & { name?: string };
+
+function fromValue(products?: ProductValue[] | null): Draft[] {
   if (!products?.length) return [blankRow()];
   return products.map((product) => ({
     name: product.name || "",
@@ -43,7 +45,7 @@ export function OfferProductsField({
   onChange,
   offerType,
 }: {
-  value?: OfferProductInput[] | null;
+  value?: ProductValue[] | null;
   onChange: (products: OfferProductInput[]) => void;
   offerType?: string;
 }) {
