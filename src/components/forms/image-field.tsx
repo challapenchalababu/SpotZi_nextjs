@@ -10,6 +10,7 @@ import {
   MAX_UPLOAD_BYTES,
   compressImageFile,
   formatBytes,
+  friendlyImageError,
   needsCompression,
 } from "@/lib/compress-image";
 
@@ -22,6 +23,7 @@ type PendingImage = {
   compressed?: File;
   compressing: boolean;
   compressError?: string;
+  autoStarted?: boolean;
 };
 
 function isLikelyImageFile(file: File) {
@@ -38,6 +40,11 @@ export function ImageField({ label, value, onChange }: { label: string; value: s
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingImage | null>(null);
   const pendingUrlRef = useRef<string | null>(null);
+  const pendingRef = useRef<PendingImage | null>(null);
+
+  useEffect(() => {
+    pendingRef.current = pending;
+  }, [pending]);
 
   useEffect(() => {
     return () => {
@@ -118,36 +125,56 @@ export function ImageField({ label, value, onChange }: { label: string; value: s
       previewUrl,
       previewFailed: false,
       compressing: false,
+      autoStarted: false,
     });
   }
 
-  async function runCompress() {
-    if (!pending || pending.compressing) return;
-    setPending((current) => (current ? { ...current, compressing: true, compressError: undefined } : current));
+  async function runCompress(fromAuto = false) {
+    const current = pendingRef.current;
+    if (!current || current.compressing || current.compressed) return;
+    if (fromAuto && current.autoStarted) return;
+
+    setPending((value) =>
+      value
+        ? {
+            ...value,
+            compressing: true,
+            compressError: undefined,
+            autoStarted: fromAuto ? true : value.autoStarted,
+          }
+        : value,
+    );
+
     try {
-      const compressed = await compressImageFile(pending.original, MAX_UPLOAD_BYTES);
-      setPending((current) =>
-        current
+      const compressed = await compressImageFile(current.original, MAX_UPLOAD_BYTES);
+      setPending((value) =>
+        value && value.original === current.original
           ? {
-              ...current,
+              ...value,
               compressed,
               compressing: false,
               compressError: undefined,
             }
-          : current,
+          : value,
       );
     } catch (caught) {
-      setPending((current) =>
-        current
+      setPending((value) =>
+        value && value.original === current.original
           ? {
-              ...current,
+              ...value,
               compressing: false,
-              compressError: caught instanceof Error ? caught.message : "Compression failed.",
+              compressError: friendlyImageError(caught),
             }
-          : current,
+          : value,
       );
     }
   }
+
+  useEffect(() => {
+    if (!pending || pending.compressed || pending.compressing || pending.autoStarted || pending.compressError) return;
+    void runCompress(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- start once per newly picked oversized file
+  }, [pending?.original]);
 
   function confirmUpload() {
     if (!pending?.compressed) return;
@@ -183,7 +210,7 @@ export function ImageField({ label, value, onChange }: { label: string; value: s
         </Button>
       ) : null}
       <p className="text-xs text-muted-foreground">
-        JPEG, PNG, or WebP up to 5 MB after upload. Larger photos can be compressed on this device first — nothing oversized is sent to the server.
+        JPEG, PNG, or WebP up to 5 MB after upload. Larger photos are compressed on this device first. If a gallery photo fails, use Take photo.
       </p>
 
       <Dialog open={Boolean(pending)} title="Image is larger than 5 MB" onClose={() => !busy && clearPending()}>
@@ -191,7 +218,7 @@ export function ImageField({ label, value, onChange }: { label: string; value: s
           <div className="space-y-3">
             {pending.previewFailed ? (
               <div className="flex h-40 items-center justify-center rounded-xl bg-muted px-4 text-center text-sm text-muted-foreground">
-                Preview unavailable for this gallery file. You can still try Compress.
+                Preview unavailable for this gallery file. Compression can still run.
               </div>
             ) : (
               // eslint-disable-next-line @next/next/no-img-element -- temporary local blob preview
@@ -209,9 +236,11 @@ export function ImageField({ label, value, onChange }: { label: string; value: s
               <p className="text-sm text-success">
                 Compressed size: <span className="font-medium">{formatBytes(pending.compressed.size)}</span> — ready to save.
               </p>
+            ) : pending.compressing ? (
+              <p className="text-sm text-muted-foreground">Compressing on this device…</p>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Compress on this device, then confirm. The temporary preview is discarded if you cancel; only the compressed file is uploaded.
+                Compress on this device, then confirm. Only the compressed file is uploaded.
               </p>
             )}
             {pending.compressError ? <p className="text-sm text-danger">{pending.compressError}</p> : null}
@@ -220,8 +249,8 @@ export function ImageField({ label, value, onChange }: { label: string; value: s
                 Cancel
               </Button>
               {!pending.compressed ? (
-                <Button type="button" variant="secondary" disabled={busy} onClick={runCompress}>
-                  {pending.compressing ? "Compressing…" : "Compress"}
+                <Button type="button" variant="secondary" disabled={busy} onClick={() => runCompress(false)}>
+                  {pending.compressing ? "Compressing…" : "Retry compress"}
                 </Button>
               ) : (
                 <Button type="button" disabled={busy} onClick={confirmUpload}>

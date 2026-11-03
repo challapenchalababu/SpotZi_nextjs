@@ -40,14 +40,27 @@ function TimeSelect({
   );
 }
 
-export function BranchForm({ businesses, branch }: { businesses: BusinessDTO[]; branch?: BranchDTO }) {
+export function BranchForm({
+  businesses,
+  branch,
+  defaultBusinessId,
+}: {
+  businesses: BusinessDTO[];
+  branch?: BranchDTO;
+  defaultBusinessId?: string;
+}) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const hours = branch?.openingHours ?? defaultOpeningHours();
+  const preferredBusinessId =
+    branch?.businessId ||
+    (defaultBusinessId && businesses.some((item) => item.id === defaultBusinessId) ? defaultBusinessId : "") ||
+    businesses[0]?.id ||
+    "";
   const form = useForm<BranchInput>({
     resolver: zodResolver(branchSchema) as Resolver<BranchInput>,
     defaultValues: {
-      businessId: branch?.businessId ?? businesses[0]?.id ?? "",
+      businessId: preferredBusinessId,
       branchName: branch?.branchName ?? "",
       address: {
         line1: branch?.address.line1 ?? "",
@@ -96,7 +109,11 @@ export function BranchForm({ businesses, branch }: { businesses: BusinessDTO[]; 
           const saved = branch
             ? await api<BranchDTO>(`/api/branches/${branch.id}`, { method: "PATCH", body: JSON.stringify(values) })
             : await api<BranchDTO>("/api/branches", { method: "POST", body: JSON.stringify(values) });
-          router.push("/owner/branches");
+          if (branch) {
+            router.push("/owner/branches");
+          } else {
+            router.push("/owner/offers/create");
+          }
           router.refresh();
           void saved;
         } catch (caught) {

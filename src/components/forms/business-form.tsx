@@ -32,7 +32,11 @@ export function BusinessForm({ categories, business }: { categories: CategoryDTO
         const saved = business
           ? await api<BusinessDTO>(`/api/businesses/${business.id}`, { method: "PATCH", body: JSON.stringify(values) })
           : await api<BusinessDTO>("/api/businesses", { method: "POST", body: JSON.stringify(values) });
-        router.push(`/owner/businesses/${saved.id}`);
+        if (business) {
+          router.push(`/owner/businesses/${saved.id}`);
+        } else {
+          router.push(`/owner/branches/create?businessId=${encodeURIComponent(saved.id)}`);
+        }
         router.refresh();
       } catch (caught) {
         setError(caught instanceof Error ? caught.message : "Could not save the business.");

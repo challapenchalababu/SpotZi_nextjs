@@ -1,7 +1,7 @@
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 /** Reject absurd local files before decoding — keeps the browser responsive. */
 export const MAX_SOURCE_BYTES = 40 * 1024 * 1024;
-const MAX_EDGE = 2048;
+const MAX_EDGE = 1920;
 
 export function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -11,6 +11,19 @@ export function formatBytes(bytes: number) {
 
 export function needsCompression(file: File) {
   return file.size > MAX_UPLOAD_BYTES;
+}
+
+export function friendlyImageError(caught: unknown) {
+  const message = caught instanceof Error ? caught.message : String(caught || "");
+  if (/heic|heif/i.test(message)) {
+    return "This gallery photo is HEIC/HEIF. Export it as JPEG/PNG, or use Take photo.";
+  }
+  if (/decode|read this image|no readable dimensions|source image/i.test(message)) {
+    return "This photo could not be read on your phone. Try Take photo, or pick a JPEG/PNG under 12 MB from the gallery.";
+  }
+  if (/5 MB|under 5/i.test(message)) return message;
+  if (message.trim()) return message;
+  return "Could not compress this image. Try another photo.";
 }
 
 function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number) {
@@ -41,104 +54,151 @@ function isHeicLike(file: File) {
 async function looksLikeHeic(file: File) {
   if (isHeicLike(file)) return true;
   try {
-    const header = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+    const header = new Uint8Array(await file.slice(0, 16).arrayBuffer());
     if (header.length < 12) return false;
+    // ISO BMFF: size(4) + 'ftyp'(4) + brand(4)
+    const box = String.fromCharCode(...header.slice(4, 8));
+    if (box !== "ftyp") return false;
     const brand = String.fromCharCode(...header.slice(8, 12)).toLowerCase();
-    return brand === "heic" || brand === "heif" || brand === "mif1" || brand === "msf1";
+    return brand === "heic" || brand === "heif" || brand === "mif1" || brand === "msf1" || brand === "heim" || brand === "heix";
   } catch {
     return false;
   }
 }
 
-function asDecodableBlob(file: File) {
+function candidateBlobs(file: File): Blob[] {
   const type = (file.type || "").toLowerCase();
-  if (type.startsWith("image/") && type !== "image/*") return file;
   const name = file.name.toLowerCase();
-  if (name.endsWith(".png")) return new Blob([file], { type: "image/png" });
-  if (name.endsWith(".webp")) return new Blob([file], { type: "image/webp" });
-  if (name.endsWith(".gif")) return new Blob([file], { type: "image/gif" });
-  return new Blob([file], { type: "image/jpeg" });
+  const blobs: Blob[] = [];
+  const push = (blob: Blob) => {
+    if (!blobs.some((item) => item.type === blob.type)) blobs.push(blob);
+  };
+
+  if (type.startsWith("image/") && type !== "image/*") push(file);
+  push(file);
+  if (name.endsWith(".png")) push(new Blob([file], { type: "image/png" }));
+  else if (name.endsWith(".webp")) push(new Blob([file], { type: "image/webp" }));
+  else if (name.endsWith(".gif")) push(new Blob([file], { type: "image/gif" }));
+  else {
+    push(new Blob([file], { type: "image/jpeg" }));
+    push(new Blob([file], { type: "image/webp" }));
+  }
+  return blobs;
 }
 
-async function loadWithImageElement(source: Blob) {
-  const url = URL.createObjectURL(source);
+type LoadedImage = {
+  source: ImageBitmap | HTMLImageElement;
+  objectUrl?: string;
+};
+
+async function loadWithImageElement(source: Blob): Promise<LoadedImage> {
+  const objectUrl = URL.createObjectURL(source);
   try {
     const image = await new Promise<HTMLImageElement>((resolve, reject) => {
       const element = new Image();
       element.decoding = "async";
       element.onload = () => resolve(element);
       element.onerror = () => reject(new Error("Could not read this image."));
-      element.src = url;
+      element.src = objectUrl;
     });
-    // Ensure pixels are decoded before drawing on constrained mobile browsers.
     if ("decode" in image) {
       try {
         await image.decode();
       } catch {
-        // Some browsers throw here even when the image is drawable.
+        // Drawable even when decode() rejects on some Android WebViews.
       }
     }
-    return image;
-  } finally {
-    URL.revokeObjectURL(url);
+    if (!image.width || !image.height) {
+      throw new Error("This photo has no readable dimensions.");
+    }
+    // Keep object URL alive until after canvas draw — revoking early breaks Android.
+    return { source: image, objectUrl };
+  } catch (caught) {
+    URL.revokeObjectURL(objectUrl);
+    throw caught;
   }
 }
 
-async function loadBitmap(file: File) {
+async function loadWithDataUrl(source: Blob): Promise<LoadedImage> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Could not read this image."));
+    reader.readAsDataURL(source);
+  });
+  if (!dataUrl.startsWith("data:image/")) {
+    throw new Error("Could not read this image.");
+  }
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const element = new Image();
+    element.onload = () => resolve(element);
+    element.onerror = () => reject(new Error("Could not read this image."));
+    element.src = dataUrl;
+  });
+  if (!image.width || !image.height) {
+    throw new Error("This photo has no readable dimensions.");
+  }
+  return { source: image };
+}
+
+async function tryCreateImageBitmap(blob: Blob, edge: number) {
+  if (typeof createImageBitmap !== "function") return null;
+
+  const attempts: ImageBitmapOptions[] = [
+    { resizeWidth: edge, resizeQuality: "medium" },
+    { resizeWidth: edge, resizeQuality: "high", imageOrientation: "from-image" },
+    { imageOrientation: "from-image" },
+    {},
+  ];
+
+  for (const options of attempts) {
+    try {
+      const bitmap = Object.keys(options).length
+        ? await createImageBitmap(blob, options)
+        : await createImageBitmap(blob);
+      return { source: bitmap } satisfies LoadedImage;
+    } catch {
+      // try next strategy
+    }
+  }
+  return null;
+}
+
+async function loadBitmap(file: File): Promise<LoadedImage> {
   if (await looksLikeHeic(file)) {
-    throw new Error("This gallery photo is HEIC/HEIF, which this browser cannot compress. Choose a JPEG or PNG, or share/export the photo as JPEG first.");
+    throw new Error("This gallery photo is HEIC/HEIF. Export it as JPEG/PNG, or use Take photo.");
   }
 
-  const blob = asDecodableBlob(file);
-  const decodeErrors: string[] = [];
-
-  if (typeof createImageBitmap === "function") {
-    // Prefer downsampled decode — full-resolution phone photos often OOM on mobile.
-    try {
-      return await createImageBitmap(blob, {
-        resizeWidth: MAX_EDGE,
-        resizeQuality: "high",
-        imageOrientation: "from-image",
-      } as ImageBitmapOptions);
-    } catch (caught) {
-      decodeErrors.push(caught instanceof Error ? caught.message : "createImageBitmap resize failed");
+  let lastError: unknown;
+  for (const blob of candidateBlobs(file)) {
+    for (const edge of [MAX_EDGE, 1280, 1024]) {
+      try {
+        const loaded = await tryCreateImageBitmap(blob, edge);
+        if (loaded) return loaded;
+      } catch (caught) {
+        lastError = caught;
+      }
     }
 
     try {
-      return await createImageBitmap(blob, {
-        imageOrientation: "from-image",
-      } as ImageBitmapOptions);
+      return await loadWithImageElement(blob);
     } catch (caught) {
-      decodeErrors.push(caught instanceof Error ? caught.message : "createImageBitmap failed");
+      lastError = caught;
     }
 
     try {
-      return await createImageBitmap(blob);
+      return await loadWithDataUrl(blob);
     } catch (caught) {
-      decodeErrors.push(caught instanceof Error ? caught.message : "createImageBitmap plain failed");
+      lastError = caught;
     }
   }
 
-  try {
-    return await loadWithImageElement(blob);
-  } catch (caught) {
-    decodeErrors.push(caught instanceof Error ? caught.message : "image element failed");
-  }
-
-  const detail = decodeErrors.find(Boolean);
-  if (detail && /heic|heif|decode/i.test(detail)) {
-    throw new Error(
-      "This photo could not be decoded on your device. Try another gallery image saved as JPEG/PNG, or take a new photo.",
-    );
-  }
-  throw new Error(
-    "This photo could not be decoded on your device. Try another gallery image saved as JPEG/PNG, or take a new photo.",
-  );
+  throw new Error(friendlyImageError(lastError || new Error("The source image could not be decoded.")));
 }
 
 function drawScaled(source: ImageBitmap | HTMLImageElement, maxEdge: number) {
-  const width = "width" in source ? source.width : 0;
-  const height = "height" in source ? source.height : 0;
+  const width = source.width || 0;
+  const height = source.height || 0;
   if (!width || !height) throw new Error("This photo has no readable dimensions.");
   const scale = Math.min(1, maxEdge / Math.max(width, height));
   const targetWidth = Math.max(1, Math.round(width * scale));
@@ -152,6 +212,11 @@ function drawScaled(source: ImageBitmap | HTMLImageElement, maxEdge: number) {
   return canvas;
 }
 
+function releaseLoaded(loaded: LoadedImage) {
+  if (loaded.objectUrl) URL.revokeObjectURL(loaded.objectUrl);
+  if ("close" in loaded.source && typeof loaded.source.close === "function") loaded.source.close();
+}
+
 /**
  * Compresses an image in the browser (no server temp files).
  * Returns a JPEG File sized for the 5 MB upload limit when possible.
@@ -159,14 +224,14 @@ function drawScaled(source: ImageBitmap | HTMLImageElement, maxEdge: number) {
 export async function compressImageFile(file: File, targetBytes = MAX_UPLOAD_BYTES): Promise<File> {
   if (file.size <= targetBytes) return file;
 
-  const bitmap = await loadBitmap(file);
+  const loaded = await loadBitmap(file);
   try {
-    let edge = Math.min(MAX_EDGE, Math.max(bitmap.width, bitmap.height));
+    let edge = Math.min(MAX_EDGE, Math.max(loaded.source.width, loaded.source.height));
     let best: Blob | null = null;
 
     for (let attempt = 0; attempt < 8; attempt += 1) {
-      const canvas = drawScaled(bitmap, edge);
-      for (const quality of [0.82, 0.72, 0.62, 0.52, 0.42, 0.32, 0.22]) {
+      const canvas = drawScaled(loaded.source, edge);
+      for (const quality of [0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2]) {
         const blob = await canvasToBlob(canvas, "image/jpeg", quality);
         best = blob;
         if (blob.size <= targetBytes) {
@@ -184,7 +249,7 @@ export async function compressImageFile(file: File, targetBytes = MAX_UPLOAD_BYT
 
     throw new Error("Could not get this image under 5 MB. Try a smaller photo.");
   } finally {
-    if ("close" in bitmap && typeof bitmap.close === "function") bitmap.close();
+    releaseLoaded(loaded);
   }
 }
 
