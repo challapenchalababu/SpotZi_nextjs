@@ -143,7 +143,7 @@ function offerPayload(input: CreateOfferInput | UpdateOfferInput, branch: Branch
   return {
     templateId: input.templateId,
     title: input.title.trim(),
-    description: input.description.trim(),
+    description: (input.description || input.title).trim(),
     offerType: input.offerType,
     discountValue: input.discountValue,
     originalPrice: input.originalPrice,
@@ -309,9 +309,6 @@ export async function setOfferStatus(actorId: string, offerId: string, status: O
     if (offer.validUntil.getTime() < Date.now()) {
       throw new AppError(400, "expired_dates", "Update the end date before publishing this offer.");
     }
-    if (!offer.termsAndConditions || offer.termsAndConditions.trim().length < 10) {
-      throw new AppError(400, "validation_error", "Add terms and conditions before publishing.");
-    }
   }
   offer.status = status;
   await offer.save();
@@ -391,7 +388,10 @@ function toStoreDto(input: {
     offerCount: input.offerCount,
     itemCount: input.itemCount,
     topDiscountLabel: input.topOffer ? discountLabel(input.topOffer) : undefined,
-    posterUrl: safeImageUrl(input.topOffer?.posterUrl) || safeImageUrl(input.business.logoUrl),
+    posterUrl:
+      safeImageUrl(input.topOffer?.posterUrl) ||
+      safeImageUrl(input.branch.photoUrl) ||
+      safeImageUrl(input.business.logoUrl),
     distanceKm: input.distanceKm,
     business: {
       id: String(input.business._id),

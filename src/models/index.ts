@@ -22,14 +22,14 @@ const pointSchema = new Schema(
 
 const addressSchema = new Schema(
   {
-    line1: { type: String, required: true, trim: true },
+    line1: { type: String, trim: true, default: "" },
     line2: { type: String, trim: true },
     area: { type: String, required: true, trim: true },
     city: { type: String, required: true, trim: true },
     citySlug: { type: String, required: true, trim: true },
     state: { type: String, trim: true },
     pincode: { type: String, required: true, trim: true },
-    country: { type: String, required: true, trim: true, default: "India" },
+    country: { type: String, trim: true, default: "India" },
   },
   { _id: false },
 );
@@ -108,7 +108,7 @@ const businessSchema = new Schema<BusinessRecord>(
     businessName: { type: String, required: true, trim: true, maxlength: 80 },
     slug: { type: String, required: true, unique: true },
     category: { type: String, required: true, trim: true },
-    description: { type: String, required: true },
+    description: { type: String, default: "" },
     logoUrl: { type: String },
     contactPhone: { type: String, trim: true },
     website: { type: String, trim: true },
@@ -128,6 +128,7 @@ export interface BranchRecord {
   location: { type: "Point"; coordinates: [number, number] };
   openingHours: OpeningHours;
   phone?: string;
+  photoUrl?: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -150,6 +151,7 @@ const branchSchema = new Schema<BranchRecord>(
       sunday: { type: openingDaySchema, required: true },
     },
     phone: { type: String, trim: true },
+    photoUrl: { type: String },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true },

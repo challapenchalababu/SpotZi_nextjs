@@ -119,6 +119,7 @@ export interface BranchDTO {
   longitude: number;
   openingHours: OpeningHours;
   phone?: string;
+  photoUrl?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -192,6 +193,7 @@ export interface PublicBranchRef {
   latitude: number;
   longitude: number;
   phone?: string;
+  photoUrl?: string;
   openingHours: OpeningHours;
 }
 

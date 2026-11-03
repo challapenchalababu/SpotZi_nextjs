@@ -117,7 +117,7 @@ export const openingHoursSchema = z.object({
 export const businessSchema = z.object({
   businessName: z.string().trim().min(2).max(80),
   category: z.string().trim().min(2).max(60),
-  description: z.string().trim().min(20).max(2000),
+  description: z.string().trim().max(2000).optional().or(z.literal("")),
   logoUrl: z.string().trim().max(500).optional().or(z.literal("")),
   contactPhone: optionalPhone,
   website: optionalUrl,
@@ -128,17 +128,18 @@ export const branchSchema = z.object({
   businessId: z.string().min(1),
   branchName: z.string().trim().min(2).max(80),
   address: z.object({
-    line1: z.string().trim().min(3).max(160),
+    line1: z.string().trim().max(160).optional().or(z.literal("")),
     line2: z.string().trim().max(160).optional().or(z.literal("")),
     area: z.string().trim().min(2).max(80),
     city: z.string().trim().min(2).max(80),
     state: z.string().trim().max(80).optional().or(z.literal("")),
     pincode: z.string().trim().regex(/^[A-Za-z0-9 -]{3,12}$/, "Enter a valid pincode."),
-    country: z.string().trim().min(2).max(60),
+    country: z.string().trim().max(60).optional().or(z.literal("")),
   }),
   latitude: z.preprocess(emptyNumber, z.number().min(-90).max(90)),
   longitude: z.preprocess(emptyNumber, z.number().min(-180).max(180)),
   phone: optionalPhone,
+  photoUrl: z.string().trim().max(500).optional().or(z.literal("")),
   openingHours: openingHoursSchema,
   isActive: z.boolean().optional(),
 });
@@ -196,7 +197,7 @@ const offerFields = {
   businessId: z.string().min(1),
   templateId: z.string().min(1),
   title: z.string().trim().min(3).max(120),
-  description: z.string().trim().min(10).max(2000),
+  description: z.string().trim().max(2000).optional().or(z.literal("")),
   offerType: z.enum(OFFER_TYPES),
   discountValue: optionalPrice,
   originalPrice: optionalPrice,
@@ -208,7 +209,7 @@ const offerFields = {
   activeDays: z.array(z.enum(WEEKDAYS)).max(7),
   startTime: z.union([z.literal(""), clockSchema]).optional(),
   endTime: z.union([z.literal(""), clockSchema]).optional(),
-  timezone: z.string().trim().min(1).max(80),
+  timezone: z.string().trim().min(1).max(80).default("Asia/Kolkata"),
   termsAndConditions: z.string().trim().max(2000).optional().or(z.literal("")),
   redemptionLimit: optionalLimit,
   status: z.enum(["draft", "published"]),
@@ -258,7 +259,7 @@ function refineOffer(data: {
   originalPrice?: number;
   discountedPrice?: number;
   status: string;
-  description: string;
+  description?: string;
   termsAndConditions?: string;
   products?: Array<{
     name: string;
@@ -270,7 +271,7 @@ function refineOffer(data: {
   if (data.validUntil < data.validFrom) {
     ctx.addIssue({ code: "custom", message: "The end date must be on or after the start date.", path: ["validUntil"] });
   }
-  if (!isValidTimeZone(data.timezone)) {
+  if (!isValidTimeZone(data.timezone || "Asia/Kolkata")) {
     ctx.addIssue({ code: "custom", message: "Choose a valid time zone.", path: ["timezone"] });
   }
   const start = data.startTime || "";
@@ -284,12 +285,6 @@ function refineOffer(data: {
     });
   } else {
     refinePricing(data, ctx);
-  }
-  if (data.status === "published" && data.description.trim().length < 20) {
-    ctx.addIssue({ code: "custom", message: "Write at least 20 characters before publishing.", path: ["description"] });
-  }
-  if (data.status === "published" && (data.termsAndConditions || "").trim().length < 10) {
-    ctx.addIssue({ code: "custom", message: "Add terms and conditions before publishing.", path: ["termsAndConditions"] });
   }
 }
 

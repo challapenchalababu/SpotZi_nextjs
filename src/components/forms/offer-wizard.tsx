@@ -74,7 +74,7 @@ export function OfferWizard({ templateId }: { templateId?: string }) {
 
   async function next() {
     const fields: Array<keyof CreateOfferInput> =
-      step === 0 ? ["businessId", "branchIds"] : step === 1 ? ["templateId"] : ["title", "description", "offerType", "validFrom", "validUntil", "timezone", "products"];
+      step === 0 ? ["businessId", "branchIds"] : step === 1 ? ["templateId"] : ["title", "offerType", "validFrom", "validUntil", "products"];
     const valid = await form.trigger(fields);
     if (valid) setStep((value) => Math.min(value + 1, steps.length - 1));
   }
@@ -87,7 +87,14 @@ export function OfferWizard({ templateId }: { templateId?: string }) {
         const products = (payload.products || []).filter((product) => product.name.trim());
         const created = await api<Array<{ id: string }>>("/api/offers", {
           method: "POST",
-          body: JSON.stringify({ ...payload, products, status }),
+          body: JSON.stringify({
+            ...payload,
+            products,
+            status,
+            description: payload.description?.trim() || payload.title.trim(),
+            timezone: payload.timezone || "Asia/Kolkata",
+            termsAndConditions: payload.termsAndConditions || "",
+          }),
         });
         router.push(created[0] ? `/owner/offers/${created[0].id}` : "/owner/offers");
         router.refresh();
@@ -183,9 +190,6 @@ export function OfferWizard({ templateId }: { templateId?: string }) {
           <Field label="Campaign title" error={form.formState.errors.title?.message}>
             <input className={fieldClass} {...form.register("title")} placeholder="e.g. New store opening offer" />
           </Field>
-          <Field label="Description" error={form.formState.errors.description?.message}>
-            <textarea className={fieldClass} rows={4} {...form.register("description")} />
-          </Field>
           <Field label="Offer type" error={form.formState.errors.offerType?.message}>
             <select className={fieldClass} {...form.register("offerType")}>
               {(["percentage", "flat", "bogo", "special"] as OfferType[]).map((type) => (
@@ -209,13 +213,6 @@ export function OfferWizard({ templateId }: { templateId?: string }) {
               <input className={fieldClass} type="time" {...form.register("endTime")} />
             </Field>
           </div>
-          <Field label="Time zone" error={form.formState.errors.timezone?.message}>
-            <select className={fieldClass} {...form.register("timezone")}>
-              {["Asia/Kolkata", "Asia/Dubai", "Asia/Singapore", "Europe/London", "America/New_York", "UTC"].map((zone) => (
-                <option key={zone}>{zone}</option>
-              ))}
-            </select>
-          </Field>
           <fieldset className="flex flex-wrap gap-3 text-sm">
             <legend className="mb-2 w-full font-medium">Applicable days</legend>
             {WEEKDAYS.map((day) => (
@@ -235,12 +232,6 @@ export function OfferWizard({ templateId }: { templateId?: string }) {
               </label>
             ))}
           </fieldset>
-          <Field label="Redemption limit">
-            <input className={fieldClass} type="number" {...form.register("redemptionLimit", { valueAsNumber: true })} />
-          </Field>
-          <Field label="Terms and conditions" error={form.formState.errors.termsAndConditions?.message}>
-            <textarea className={fieldClass} rows={4} {...form.register("termsAndConditions")} />
-          </Field>
 
           <OfferProductsField
             offerType={values.offerType}

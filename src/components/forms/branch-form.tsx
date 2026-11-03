@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch, type Resolver } from "react-hook-form";
+import { ImageField } from "@/components/forms/image-field";
 import { Button, Field, Notice, fieldClass } from "@/components/ui/primitives";
 import { api } from "@/lib/api-client";
 import { defaultOpeningHours, TIME_OPTIONS } from "@/lib/hours";
@@ -55,17 +56,19 @@ export function BranchForm({ businesses, branch }: { businesses: BusinessDTO[]; 
         city: branch?.address.city ?? "",
         state: branch?.address.state ?? "",
         pincode: branch?.address.pincode ?? "",
-        country: branch?.address.country ?? "India",
+        country: branch?.address.country || "India",
       },
       latitude: branch?.latitude ?? ("" as unknown as number),
       longitude: branch?.longitude ?? ("" as unknown as number),
       phone: branch?.phone ?? "",
+      photoUrl: branch?.photoUrl ?? "",
       openingHours: hours,
       isActive: branch?.isActive ?? true,
     },
   });
 
   const openingHours = useWatch({ control: form.control, name: "openingHours" });
+  const photoUrl = useWatch({ control: form.control, name: "photoUrl" });
 
   function fillFromBrowser() {
     navigator.geolocation.getCurrentPosition((position) => {
@@ -114,9 +117,6 @@ export function BranchForm({ businesses, branch }: { businesses: BusinessDTO[]; 
       <Field label="Branch name" error={form.formState.errors.branchName?.message}>
         <input className={fieldClass} {...form.register("branchName")} />
       </Field>
-      <Field label="Address line" error={form.formState.errors.address?.line1?.message}>
-        <input className={fieldClass} {...form.register("address.line1")} />
-      </Field>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Area" error={form.formState.errors.address?.area?.message}>
           <input className={fieldClass} {...form.register("address.area")} />
@@ -130,13 +130,12 @@ export function BranchForm({ businesses, branch }: { businesses: BusinessDTO[]; 
         <Field label="Pincode" error={form.formState.errors.address?.pincode?.message}>
           <input className={fieldClass} {...form.register("address.pincode")} />
         </Field>
-        <Field label="Country">
-          <input className={fieldClass} {...form.register("address.country")} />
-        </Field>
-        <Field label="Phone">
-          <input className={fieldClass} {...form.register("phone")} />
-        </Field>
       </div>
+      <ImageField
+        label="Shop photo"
+        value={photoUrl || ""}
+        onChange={(url) => form.setValue("photoUrl", url, { shouldDirty: true })}
+      />
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Latitude" error={form.formState.errors.latitude?.message}>
           <input className={fieldClass} step="any" type="number" {...form.register("latitude", { valueAsNumber: true })} />

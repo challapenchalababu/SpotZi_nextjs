@@ -3,8 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useWatch } from "react-hook-form";
-import { ImageField } from "@/components/forms/image-field";
+import { useForm } from "react-hook-form";
 import { Button, Field, Notice, fieldClass } from "@/components/ui/primitives";
 import { api } from "@/lib/api-client";
 import { businessSchema, type BusinessInput } from "@/validators";
@@ -25,7 +24,6 @@ export function BusinessForm({ categories, business }: { categories: CategoryDTO
       isActive: business?.isActive ?? true,
     },
   });
-  const logoUrl = useWatch({ control: form.control, name: "logoUrl" });
 
   return (
     <form className="max-w-2xl space-y-4" onSubmit={form.handleSubmit(async (values) => {
@@ -47,10 +45,6 @@ export function BusinessForm({ categories, business }: { categories: CategoryDTO
           {categories.map((category) => <option key={category.id} value={category.slug}>{category.name}</option>)}
         </select>
       </Field>
-      <Field label="Description" error={form.formState.errors.description?.message}><textarea className={fieldClass} rows={5} {...form.register("description")} /></Field>
-      <Field label="Phone" error={form.formState.errors.contactPhone?.message}><input className={fieldClass} {...form.register("contactPhone")} /></Field>
-      <Field label="Website" error={form.formState.errors.website?.message}><input className={fieldClass} placeholder="https://" {...form.register("website")} /></Field>
-      <ImageField label="Logo" value={logoUrl || ""} onChange={(url) => form.setValue("logoUrl", url)} />
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" {...form.register("isActive")} /> Business is active</label>
       <Button type="submit" disabled={form.formState.isSubmitting}>{business ? "Save changes" : "Create business"}</Button>
     </form>

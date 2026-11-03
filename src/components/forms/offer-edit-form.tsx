@@ -72,6 +72,9 @@ export function OfferEditForm({
             method: "PATCH",
             body: JSON.stringify({
               ...values,
+              description: values.description?.trim() || values.title.trim(),
+              timezone: values.timezone || "Asia/Kolkata",
+              termsAndConditions: values.termsAndConditions || "",
               items: [
                 {
                   name: productName,
@@ -136,9 +139,6 @@ export function OfferEditForm({
       <Field label="Title" error={form.formState.errors.title?.message}>
         <input className={fieldClass} {...form.register("title")} />
       </Field>
-      <Field label="Description" error={form.formState.errors.description?.message}>
-        <textarea className={fieldClass} rows={4} {...form.register("description")} />
-      </Field>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Valid from" error={form.formState.errors.validFrom?.message}>
           <input className={fieldClass} type="date" {...form.register("validFrom")} />
@@ -164,15 +164,6 @@ export function OfferEditForm({
           ))}
         </div>
       </fieldset>
-      <Field label="Terms" error={form.formState.errors.termsAndConditions?.message}>
-        <textarea className={fieldClass} rows={3} {...form.register("termsAndConditions")} />
-      </Field>
-      <Field label="Redemption limit">
-        <input className={fieldClass} type="number" {...form.register("redemptionLimit", { setValueAs: emptyNumber })} />
-      </Field>
-      <Field label="Time zone">
-        <input className={fieldClass} {...form.register("timezone")} />
-      </Field>
 
       <div className="space-y-3 rounded-2xl border border-primary/20 bg-primary/5 p-4">
         <div>

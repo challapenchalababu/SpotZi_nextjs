@@ -48,7 +48,7 @@ export async function createBusiness(ownerId: string, input: BusinessInput): Pro
     businessName: input.businessName.trim(),
     slug: await uniqueSlug(BusinessModel, "slug", input.businessName),
     category: category.slug,
-    description: input.description.trim(),
+    description: (input.description || "").trim(),
     logoUrl: cleanImage(input.logoUrl),
     contactPhone: blank(input.contactPhone),
     website: cleanWebsite(input.website),
@@ -69,7 +69,7 @@ export async function updateBusiness(ownerId: string, businessId: string, input:
   const category = await assertActiveCategory(input.category);
   business.businessName = input.businessName.trim();
   business.category = category.slug;
-  business.description = input.description.trim();
+  business.description = (input.description || "").trim();
   business.logoUrl = cleanImage(input.logoUrl);
   business.contactPhone = blank(input.contactPhone);
   business.website = cleanWebsite(input.website);
@@ -187,18 +187,19 @@ export async function createBranch(ownerId: string, input: BranchInput): Promise
     branchName: input.branchName.trim(),
     slug,
     address: {
-      line1: input.address.line1.trim(),
+      line1: (input.address.line1 || "").trim(),
       line2: blank(input.address.line2),
       area: input.address.area.trim(),
       city: input.address.city.trim(),
       citySlug: slugify(input.address.city),
       state: blank(input.address.state),
       pincode: input.address.pincode.trim(),
-      country: input.address.country.trim(),
+      country: (input.address.country || "India").trim() || "India",
     },
     location: toPoint(input.longitude, input.latitude),
     openingHours: input.openingHours,
     phone: blank(input.phone),
+    photoUrl: cleanImage(input.photoUrl),
     isActive: input.isActive ?? true,
   });
   await logActivity({
@@ -221,18 +222,19 @@ export async function updateBranch(ownerId: string, branchId: string, input: Bra
     branch.slug = await uniqueSlug(BranchModel, "slug", `${input.branchName}-${input.address.area}-${input.address.city}`);
   }
   branch.address = {
-    line1: input.address.line1.trim(),
+    line1: (input.address.line1 || "").trim(),
     line2: blank(input.address.line2),
     area: input.address.area.trim(),
     city: input.address.city.trim(),
     citySlug: slugify(input.address.city),
     state: blank(input.address.state),
     pincode: input.address.pincode.trim(),
-    country: input.address.country.trim(),
+    country: (input.address.country || "India").trim() || "India",
   };
   branch.location = toPoint(input.longitude, input.latitude);
   branch.openingHours = input.openingHours;
   branch.phone = blank(input.phone);
+  branch.photoUrl = cleanImage(input.photoUrl);
   if (input.isActive != null) branch.isActive = input.isActive;
   await branch.save();
   await OfferModel.updateMany({ branchId: branch._id }, { $set: { location: branch.location } });

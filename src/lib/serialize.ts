@@ -101,6 +101,7 @@ export function toBranch(doc: BranchRecord, businessName?: string): BranchDTO {
     longitude,
     openingHours: normalizeOpeningHours(doc.openingHours),
     phone: doc.phone || undefined,
+    photoUrl: safeImageUrl(doc.photoUrl),
     isActive: doc.isActive,
     createdAt: iso(doc.createdAt) || new Date(0).toISOString(),
     updatedAt: iso(doc.updatedAt) || new Date(0).toISOString(),
@@ -196,6 +197,7 @@ export function toPublicOffer(input: {
       latitude: branchDto.latitude,
       longitude: branchDto.longitude,
       phone: branchDto.phone,
+      photoUrl: branchDto.photoUrl,
       openingHours: branchDto.openingHours,
     },
     template: input.template

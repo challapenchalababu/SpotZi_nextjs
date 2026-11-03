@@ -107,12 +107,10 @@ const ownerNav: Array<{ href: string; label: string; icon: keyof typeof icons }>
   { href: "/owner/dashboard", label: "Dashboard", icon: "dashboard" },
   { href: "/owner/businesses", label: "Businesses", icon: "businesses" },
   { href: "/owner/branches", label: "Branches", icon: "branches" },
-  { href: "/owner/templates", label: "Templates", icon: "templates" },
   { href: "/owner/offers", label: "Today's offers", icon: "offers" },
   { href: "/owner/redemptions", label: "Redemptions", icon: "redemptions" },
   { href: "/owner/reports", label: "Reports", icon: "reports" },
   { href: "/owner/analytics", label: "Analytics", icon: "analytics" },
-  { href: "/owner/favorites", label: "Saves", icon: "offers" },
   { href: "/owner/profile", label: "Profile", icon: "users" },
   { href: "/owner/settings", label: "Settings", icon: "settings" },
 ];

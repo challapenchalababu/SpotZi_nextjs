@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { DirectionsLink } from "@/components/customer/directions-link";
 import { OfferPoster } from "@/components/customer/poster";
+import { ShopDetailsButton } from "@/components/customer/shop-details-button";
 import { Badge } from "@/components/ui/primitives";
 import { formatAddress, formatDate, formatDistance } from "@/lib/format";
 import type { PublicOfferDTO } from "@/types/domain";
@@ -39,8 +39,8 @@ export function OfferCard({ offer }: { offer: PublicOfferDTO }) {
           <p className="text-sm">{offer.availability === "scheduled" ? `Starts ${formatDate(offer.validFrom, offer.timezone)}` : offer.openNow ? "Available now" : offer.availability === "active" ? "Valid today, outside current hours" : `Until ${formatDate(offer.validUntil, offer.timezone)}`}</p>
         </div>
       </Link>
-      <div className="px-4 pb-4">
-        <DirectionsLink latitude={offer.branch.latitude} longitude={offer.branch.longitude} />
+      <div className="flex items-center justify-end px-4 pb-4">
+        <ShopDetailsButton business={offer.business} branch={offer.branch} />
       </div>
     </article>
   );
