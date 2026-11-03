@@ -8,8 +8,8 @@ export default await serwist({
   precachePrerendered: false,
   additionalPrecacheEntries: [
     { url: "/~offline", revision: "spotzi-offline-v1" },
-    { url: "/icons/icon-192.png", revision: "spotzi-icon-192" },
-    { url: "/icons/icon-512.png", revision: "spotzi-icon-512" },
-    { url: "/manifest.webmanifest", revision: "spotzi-manifest-v1" },
+    { url: "/icons/icon-192.png", revision: "spotzi-icon-192-v2" },
+    { url: "/icons/icon-512.png", revision: "spotzi-icon-512-v2" },
+    { url: "/manifest.webmanifest", revision: "spotzi-manifest-v2" },
   ],
 });
