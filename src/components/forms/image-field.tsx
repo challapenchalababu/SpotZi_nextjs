@@ -18,10 +18,18 @@ const ACCEPT = "image/jpeg,image/png,image/webp,image/*";
 type PendingImage = {
   original: File;
   previewUrl: string;
+  previewFailed: boolean;
   compressed?: File;
   compressing: boolean;
   compressError?: string;
 };
+
+function isLikelyImageFile(file: File) {
+  const type = (file.type || "").toLowerCase();
+  if (type.startsWith("image/")) return true;
+  // Android gallery sometimes omits MIME type.
+  return /\.(jpe?g|png|webp|gif|heic|heif|hif)$/i.test(file.name);
+}
 
 export function ImageField({ label, value, onChange }: { label: string; value: string; onChange: (url: string) => void }) {
   const galleryRef = useRef<HTMLInputElement>(null);
@@ -29,18 +37,20 @@ export function ImageField({ label, value, onChange }: { label: string; value: s
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingImage | null>(null);
+  const pendingUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     return () => {
-      if (pending?.previewUrl) URL.revokeObjectURL(pending.previewUrl);
+      if (pendingUrlRef.current) URL.revokeObjectURL(pendingUrlRef.current);
     };
-  }, [pending?.previewUrl]);
+  }, []);
 
   function clearPending() {
-    setPending((current) => {
-      if (current?.previewUrl) URL.revokeObjectURL(current.previewUrl);
-      return null;
-    });
+    if (pendingUrlRef.current) {
+      URL.revokeObjectURL(pendingUrlRef.current);
+      pendingUrlRef.current = null;
+    }
+    setPending(null);
   }
 
   function upload(file: File) {
@@ -82,7 +92,7 @@ export function ImageField({ label, value, onChange }: { label: string; value: s
     event.target.value = "";
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
+    if (!isLikelyImageFile(file)) {
       setError("Choose a JPEG, PNG, or WebP image.");
       return;
     }
@@ -96,17 +106,23 @@ export function ImageField({ label, value, onChange }: { label: string; value: s
       return;
     }
 
-    clearPending();
+    if (pendingUrlRef.current) {
+      URL.revokeObjectURL(pendingUrlRef.current);
+      pendingUrlRef.current = null;
+    }
+    const previewUrl = URL.createObjectURL(file);
+    pendingUrlRef.current = previewUrl;
     setError(null);
     setPending({
       original: file,
-      previewUrl: URL.createObjectURL(file),
+      previewUrl,
+      previewFailed: false,
       compressing: false,
     });
   }
 
   async function runCompress() {
-    if (!pending) return;
+    if (!pending || pending.compressing) return;
     setPending((current) => (current ? { ...current, compressing: true, compressError: undefined } : current));
     try {
       const compressed = await compressImageFile(pending.original, MAX_UPLOAD_BYTES);
@@ -173,8 +189,19 @@ export function ImageField({ label, value, onChange }: { label: string; value: s
       <Dialog open={Boolean(pending)} title="Image is larger than 5 MB" onClose={() => !busy && clearPending()}>
         {pending ? (
           <div className="space-y-3">
-            {/* eslint-disable-next-line @next/next/no-img-element -- temporary local blob preview */}
-            <img src={pending.previewUrl} alt="Selected photo preview" className="mx-auto max-h-48 rounded-xl object-contain" />
+            {pending.previewFailed ? (
+              <div className="flex h-40 items-center justify-center rounded-xl bg-muted px-4 text-center text-sm text-muted-foreground">
+                Preview unavailable for this gallery file. You can still try Compress.
+              </div>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element -- temporary local blob preview
+              <img
+                src={pending.previewUrl}
+                alt="Selected photo preview"
+                className="mx-auto max-h-48 rounded-xl object-contain"
+                onError={() => setPending((current) => (current ? { ...current, previewFailed: true } : current))}
+              />
+            )}
             <p className="text-sm text-muted-foreground">
               Original size: <span className="font-medium text-foreground">{formatBytes(pending.original.size)}</span>
             </p>

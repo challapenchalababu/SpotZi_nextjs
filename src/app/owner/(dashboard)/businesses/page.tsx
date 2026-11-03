@@ -12,19 +12,42 @@ export default async function OwnerBusinessesPage() {
   const businesses = await listOwnerBusinesses(session.id);
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="display text-4xl">Businesses</h1>
-        <Link className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground" href="/owner/businesses/create">Add business</Link>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="display text-4xl">Businesses</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Edit a business anytime, or open it to manage its branches.</p>
+        </div>
+        <Link className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground" href="/owner/businesses/create">
+          Add business
+        </Link>
       </div>
       <div className="overflow-x-auto rounded-2xl border border-border bg-card">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-border text-muted-foreground"><tr><th className="px-4 py-3">Name</th><th>Category</th><th>Status</th></tr></thead>
+          <thead className="border-b border-border text-muted-foreground">
+            <tr>
+              <th className="px-4 py-3">Name</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
           <tbody>
             {businesses.map((business) => (
               <tr key={business.id} className="border-b border-border last:border-0">
-                <td className="px-4 py-3"><Link className="font-medium" href={`/owner/businesses/${business.id}`}>{business.businessName}</Link></td>
+                <td className="px-4 py-3">
+                  <Link className="font-medium" href={`/owner/businesses/${business.id}`}>
+                    {business.businessName}
+                  </Link>
+                </td>
                 <td>{business.categoryName || business.category}</td>
-                <td><Badge tone={business.isActive ? "success" : "warning"}>{business.isActive ? "Active" : "Disabled"}</Badge></td>
+                <td>
+                  <Badge tone={business.isActive ? "success" : "warning"}>{business.isActive ? "Active" : "Disabled"}</Badge>
+                </td>
+                <td className="py-3">
+                  <Link className="rounded-full border border-border px-3 py-1 text-sm" href={`/owner/businesses/${business.id}`}>
+                    Edit
+                  </Link>
+                </td>
               </tr>
             ))}
           </tbody>

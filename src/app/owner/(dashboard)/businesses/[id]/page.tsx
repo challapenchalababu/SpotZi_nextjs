@@ -20,18 +20,38 @@ export default async function OwnerBusinessPage({ params }: { params: Promise<{ 
   if (!business) notFound();
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="display text-4xl">{business.businessName}</h1>
-        <Link href={`/businesses/${business.slug}`} className="text-sm font-semibold text-primary">Public page</Link>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">Edit business</p>
+          <h1 className="display text-4xl">{business.businessName}</h1>
+        </div>
+        <Link href={`/businesses/${business.slug}`} className="text-sm font-semibold text-primary">
+          Public page
+        </Link>
       </div>
       <BusinessForm categories={categories} business={business} />
       <section>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <h2 className="text-xl font-semibold">Branches</h2>
-          <Link href={`/owner/branches/create`} className="text-sm font-semibold text-primary">Add branch</Link>
+          <Link href="/owner/branches/create" className="text-sm font-semibold text-primary">
+            Add branch
+          </Link>
         </div>
         <ul className="mt-3 space-y-2">
-          {branches.map((branch) => <li key={branch.id}><Link href={`/owner/branches/${branch.id}/edit`}>{branch.branchName}</Link> · {formatAddress(branch.address)}</li>)}
+          {branches.map((branch) => (
+            <li key={branch.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+              <span>
+                <Link className="font-medium" href={`/owner/branches/${branch.id}/edit`}>
+                  {branch.branchName}
+                </Link>
+                {" · "}
+                {formatAddress(branch.address)}
+              </span>
+              <Link className="rounded-full border border-border px-3 py-1" href={`/owner/branches/${branch.id}/edit`}>
+                Edit
+              </Link>
+            </li>
+          ))}
           {branches.length === 0 ? <li className="text-sm text-muted-foreground">No branches yet.</li> : null}
         </ul>
       </section>

@@ -13,20 +13,44 @@ export default async function OwnerBranchesPage() {
   const branches = await listBranchesForOwner(session.id);
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="display text-4xl">Branches</h1>
-        <Link className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground" href="/owner/branches/create">Add branch</Link>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="display text-4xl">Branches</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Edit a branch to update its location, hours, or shop photo.</p>
+        </div>
+        <Link className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground" href="/owner/branches/create">
+          Add branch
+        </Link>
       </div>
       <div className="overflow-x-auto rounded-2xl border border-border bg-card">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-border text-muted-foreground"><tr><th className="px-4 py-3">Branch</th><th>Business</th><th>Address</th><th>Status</th></tr></thead>
+          <thead className="border-b border-border text-muted-foreground">
+            <tr>
+              <th className="px-4 py-3">Branch</th>
+              <th>Business</th>
+              <th>Address</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
           <tbody>
             {branches.map((branch) => (
               <tr key={branch.id} className="border-b border-border last:border-0">
-                <td className="px-4 py-3"><Link href={`/owner/branches/${branch.id}/edit`}>{branch.branchName}</Link></td>
+                <td className="px-4 py-3">
+                  <Link className="font-medium" href={`/owner/branches/${branch.id}/edit`}>
+                    {branch.branchName}
+                  </Link>
+                </td>
                 <td>{branch.businessName}</td>
                 <td>{formatAddress(branch.address)}</td>
-                <td><Badge tone={branch.isActive ? "success" : "warning"}>{branch.isActive ? "Active" : "Disabled"}</Badge></td>
+                <td>
+                  <Badge tone={branch.isActive ? "success" : "warning"}>{branch.isActive ? "Active" : "Disabled"}</Badge>
+                </td>
+                <td className="py-3">
+                  <Link className="rounded-full border border-border px-3 py-1 text-sm" href={`/owner/branches/${branch.id}/edit`}>
+                    Edit
+                  </Link>
+                </td>
               </tr>
             ))}
           </tbody>

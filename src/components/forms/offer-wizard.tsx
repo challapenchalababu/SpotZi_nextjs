@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +18,8 @@ export function OfferWizard({ templateId }: { templateId?: string }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState<"draft" | "published" | null>(null);
+  const savingLock = useRef(false);
   const [businesses, setBusinesses] = useState<BusinessDTO[]>([]);
   const [branches, setBranches] = useState<BranchDTO[]>([]);
   const [branchesFor, setBranchesFor] = useState("");
@@ -80,8 +82,12 @@ export function OfferWizard({ templateId }: { templateId?: string }) {
   }
 
   async function save(status: "draft" | "published") {
+    if (savingLock.current) return;
     form.setValue("status", status);
     await form.handleSubmit(async (payload) => {
+      if (savingLock.current) return;
+      savingLock.current = true;
+      setSaving(status);
       setError(null);
       try {
         const products = (payload.products || []).filter((product) => product.name.trim());
@@ -99,6 +105,8 @@ export function OfferWizard({ templateId }: { templateId?: string }) {
         router.push(created[0] ? `/owner/offers/${created[0].id}` : "/owner/offers");
         router.refresh();
       } catch (caught) {
+        savingLock.current = false;
+        setSaving(null);
         setError(caught instanceof Error ? caught.message : "Could not save the offer.");
       }
     })();
@@ -282,24 +290,25 @@ export function OfferWizard({ templateId }: { templateId?: string }) {
               </div>
             ))}
           </div>
-          <div className="flex gap-2">
-            <Button type="button" variant="secondary" onClick={() => save("draft")}>
-              Save draft
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" variant="secondary" disabled={Boolean(saving)} onClick={() => save("draft")}>
+              {saving === "draft" ? "Saving draft…" : "Save draft"}
             </Button>
-            <Button type="button" onClick={() => save("published")}>
-              Publish
+            <Button type="button" disabled={Boolean(saving)} onClick={() => save("published")}>
+              {saving === "published" ? "Publishing…" : "Publish"}
             </Button>
+            {saving ? <span className="text-sm text-muted-foreground">Please wait — creating your offer.</span> : null}
           </div>
         </div>
       ) : null}
       <div className="flex gap-2">
         {step > 0 ? (
-          <Button type="button" variant="ghost" onClick={() => setStep((value) => value - 1)}>
+          <Button type="button" variant="ghost" disabled={Boolean(saving)} onClick={() => setStep((value) => value - 1)}>
             Back
           </Button>
         ) : null}
         {step < 3 ? (
-          <Button type="button" onClick={next}>
+          <Button type="button" disabled={Boolean(saving)} onClick={next}>
             Continue
           </Button>
         ) : null}

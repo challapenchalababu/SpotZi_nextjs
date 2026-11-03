@@ -16,7 +16,10 @@ export default async function EditBranchPage({ params }: { params: Promise<{ id:
   if (!branch) notFound();
   return (
     <div className="space-y-4">
-      <h1 className="display text-4xl">Edit {branch.branchName}</h1>
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">Edit branch</p>
+        <h1 className="display text-4xl">{branch.branchName}</h1>
+      </div>
       <BranchForm businesses={businesses} branch={branch} />
     </div>
   );
