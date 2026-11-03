@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Heart, LogOut, Menu, Search, UserRound, X } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
+import { InstallAppButton } from "@/components/pwa/pwa-shell";
 import { buttonClass } from "@/components/ui/primitives";
 import { api } from "@/lib/api-client";
 import type { SessionUser } from "@/types/domain";
@@ -42,6 +43,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
         <nav className="ml-auto hidden items-center gap-1 text-sm lg:flex" aria-label="Primary">
           <Link className="rounded-full px-3 py-2 hover:bg-muted" href="/offers">Offers</Link>
           <Link className="rounded-full px-3 py-2 hover:bg-muted" href="/categories">Categories</Link>
+          <InstallAppButton className="rounded-full px-3 py-2 font-semibold text-primary hover:bg-muted" />
           {current ? <AccountLinks user={current} account={account} onLogout={logout} /> : <GuestLinks />}
         </nav>
         <button className="ml-auto inline-flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-muted lg:hidden" aria-expanded={open} aria-label={open ? "Close menu" : "Open menu"} onClick={() => setOpen((value) => !value)}>
@@ -58,6 +60,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
           <div className="flex flex-col gap-1 text-sm">
             <Link className="rounded-xl px-3 py-2 hover:bg-muted" href="/offers" onClick={() => setOpen(false)}>Offers</Link>
             <Link className="rounded-xl px-3 py-2 hover:bg-muted" href="/categories" onClick={() => setOpen(false)}>Categories</Link>
+            <InstallAppButton className="rounded-xl px-3 py-2 text-left font-semibold text-primary hover:bg-muted" />
             {current ? (
               <>
                 {current.role === "customer" ? <Link className="rounded-xl px-3 py-2 hover:bg-muted" href="/favorites" onClick={() => setOpen(false)}>Saved offers</Link> : null}

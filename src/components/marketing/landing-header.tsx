@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
 import { HeaderFindOffersLink } from "@/components/marketing/tracked-ctas";
+import { InstallAppButton } from "@/components/pwa/pwa-shell";
 
 const links = [
   { href: "#how-it-works", label: "How It Works" },
@@ -32,6 +33,7 @@ export function LandingHeader() {
           <Link href="/owner/login" className="rounded-full px-3 py-2 font-semibold hover:bg-white">
             Business Login
           </Link>
+          <InstallAppButton className="rounded-full px-3 py-2 font-semibold text-[#168747] hover:bg-white" />
           <HeaderFindOffersLink className="ml-1 inline-flex items-center gap-2 rounded-full bg-[#FF6B32] px-4 py-2 font-semibold text-white hover:bg-[#e85d28]" />
         </nav>
         <button
@@ -53,6 +55,7 @@ export function LandingHeader() {
           <Link href="/owner/login" className="block rounded-xl px-3 py-2 font-semibold text-[#168747]" onClick={() => setOpen(false)}>
             Business Login
           </Link>
+          <InstallAppButton className="block w-full rounded-xl px-3 py-2 text-left font-semibold text-[#168747] hover:bg-white" />
           <HeaderFindOffersLink
             className="mt-2 inline-flex items-center gap-2 rounded-full bg-[#FF6B32] px-4 py-2 font-semibold text-white"
             onNavigate={() => setOpen(false)}

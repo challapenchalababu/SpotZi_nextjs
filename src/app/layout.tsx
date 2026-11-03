@@ -1,5 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Outfit } from "next/font/google";
+import { PwaShell } from "@/components/pwa/pwa-shell";
+import { SerwistProvider } from "@/components/pwa/serwist-provider";
 import { AppLoader } from "@/components/ui/app-loader";
 import { APP_NAME, getAppUrl } from "@/lib/env";
 import { SPOTZI_LOADER_URL } from "@/lib/loader-asset";
@@ -14,6 +16,19 @@ export const metadata: Metadata = {
   description: "SpotZi helps you find daily offers and promotional posters from restaurants, cafes, shops, salons, and supermarkets near you.",
   applicationName: APP_NAME,
   robots: { index: true, follow: true },
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: APP_NAME,
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
   verification: process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : undefined,
   openGraph: {
     type: "website",
@@ -23,24 +38,41 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#103B3A",
+  colorScheme: "light",
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${outfit.variable} ${fraunces.variable} h-full`}>
       <head>
         <link rel="preload" href={SPOTZI_LOADER_URL} as="image" type="image/gif" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
       </head>
       <body className="min-h-full bg-background text-foreground antialiased">
-        <svg aria-hidden="true" className="absolute h-0 w-0" focusable="false">
-          <defs>
-            <linearGradient id="spotzi-icon" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#1f9a45" />
-              <stop offset="50%" stopColor="#14784a" />
-              <stop offset="100%" stopColor="#0e2c33" />
-            </linearGradient>
-          </defs>
-        </svg>
-        {children}
-        <AppLoader />
+        <SerwistProvider
+          swUrl="/sw.js"
+          // Keep local HMR clean; register the service worker in production builds only.
+          disable={process.env.NODE_ENV === "development"}
+          register
+          cacheOnNavigation={false}
+          reloadOnOnline={false}
+          options={{ type: "classic" }}
+        >
+          <svg aria-hidden="true" className="absolute h-0 w-0" focusable="false">
+            <defs>
+              <linearGradient id="spotzi-icon" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#1f9a45" />
+                <stop offset="50%" stopColor="#14784a" />
+                <stop offset="100%" stopColor="#0e2c33" />
+              </linearGradient>
+            </defs>
+          </svg>
+          {children}
+          <PwaShell />
+          <AppLoader />
+        </SerwistProvider>
       </body>
     </html>
   );
