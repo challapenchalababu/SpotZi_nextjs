@@ -3,8 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OfferGrid } from "@/components/customer/offer-card";
 import { DirectionsLink } from "@/components/customer/directions-link";
+import { ReviewsSection } from "@/components/customer/reviews-section";
 import { Badge } from "@/components/ui/primitives";
 import { formatAddress, formatMoney, truncate, weekdayLabel } from "@/lib/format";
+import { getSession } from "@/lib/session";
 import { getPublicStoreBySlug } from "@/services/offer.service";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +28,7 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
   const result = await getPublicStoreBySlug(slug);
   if (!result) notFound();
   const { store, offers } = result;
+  const session = await getSession().catch(() => null);
   const address = formatAddress(store.address);
 
   return (
@@ -106,6 +109,13 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
           ))}
         </ul>
       </section>
+
+      <ReviewsSection
+        targetType="store"
+        targetId={store.id}
+        loginNext={`/stores/${store.id}`}
+        canWrite={session?.role === "customer"}
+      />
     </div>
   );
 }

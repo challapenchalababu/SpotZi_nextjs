@@ -6,6 +6,7 @@ import { after } from "next/server";
 import { OfferGrid } from "@/components/customer/offer-card";
 import { ClaimButton, FavoriteButton, ReportButton } from "@/components/customer/offer-actions";
 import { OfferPoster } from "@/components/customer/poster";
+import { ReviewsSection } from "@/components/customer/reviews-section";
 import { JsonLd } from "@/components/seo";
 import { Badge } from "@/components/ui/primitives";
 import { getAppUrl } from "@/lib/env";
@@ -119,6 +120,12 @@ export default async function OfferPage({ params }: { params: Promise<{ slug: st
           <div><dt className="text-muted-foreground">Days</dt><dd>{offer.activeDays.length ? offer.activeDays.map(weekdayLabel).join(", ") : "Every day"}</dd></div>
         </dl>
         {offer.termsAndConditions ? <section><h2 className="font-semibold">Terms</h2><p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{offer.termsAndConditions}</p></section> : null}
+        <ReviewsSection
+          targetType="offer"
+          targetId={offer.id}
+          loginNext={`/offers/${offer.slug}`}
+          canWrite={session?.role === "customer"}
+        />
       </div>
       <aside className="space-y-4">
         <div className="rounded-2xl border border-border bg-card p-4">

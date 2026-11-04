@@ -351,6 +351,50 @@ const reportSchema = new Schema<ReportRecord>(
 reportSchema.index({ status: 1, createdAt: -1 });
 reportSchema.index({ offerId: 1 });
 
+export type ReviewTargetType = "offer" | "store";
+
+export interface ReviewRecord {
+  _id: Types.ObjectId;
+  userId: Types.ObjectId;
+  targetType: ReviewTargetType;
+  targetId: Types.ObjectId;
+  /** Denormalized for admin filtering / store context on offer reviews. */
+  branchId?: Types.ObjectId;
+  businessId?: Types.ObjectId;
+  offerId?: Types.ObjectId;
+  rating: number;
+  comment: string;
+  status: "visible" | "removed";
+  removedBy?: Types.ObjectId;
+  removedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const reviewSchema = new Schema<ReviewRecord>(
+  {
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    targetType: { type: String, enum: ["offer", "store"], required: true },
+    targetId: { type: Schema.Types.ObjectId, required: true },
+    branchId: { type: Schema.Types.ObjectId, ref: "Branch" },
+    businessId: { type: Schema.Types.ObjectId, ref: "Business" },
+    offerId: { type: Schema.Types.ObjectId, ref: "Offer" },
+    rating: { type: Number, required: true, min: 1, max: 5 },
+    comment: { type: String, required: true, trim: true, maxlength: 1000 },
+    status: { type: String, enum: ["visible", "removed"], default: "visible" },
+    removedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    removedAt: { type: Date },
+  },
+  { timestamps: true },
+);
+reviewSchema.index({ targetType: 1, targetId: 1, status: 1, createdAt: -1 });
+reviewSchema.index(
+  { userId: 1, targetType: 1, targetId: 1 },
+  { unique: true, partialFilterExpression: { status: "visible" } },
+);
+reviewSchema.index({ status: 1, createdAt: -1 });
+reviewSchema.index({ businessId: 1, status: 1 });
+
 export interface ActivityRecord {
   _id: Types.ObjectId;
   actorId?: Types.ObjectId;
@@ -515,6 +559,7 @@ export const OfferModel = model("Offer", offerSchema);
 export const FavoriteModel = model("Favorite", favoriteSchema);
 export const RedemptionModel = model("Redemption", redemptionSchema);
 export const ReportModel = model("Report", reportSchema);
+export const ReviewModel = model("Review", reviewSchema);
 export const ActivityLogModel = model("ActivityLog", activitySchema);
 export const CategoryModel = model("Category", categorySchema);
 export const PasswordResetModel = model("PasswordReset", passwordResetSchema);
@@ -534,6 +579,7 @@ export async function ensureModelIndexes() {
     FavoriteModel.createIndexes(),
     RedemptionModel.createIndexes(),
     ReportModel.createIndexes(),
+    ReviewModel.createIndexes(),
     ActivityLogModel.createIndexes(),
     CategoryModel.createIndexes(),
     PasswordResetModel.createIndexes(),

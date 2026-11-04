@@ -323,6 +323,18 @@ export const reportUpdateSchema = z.object({
   resolutionNote: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
+export const reviewSchema = z.object({
+  targetType: z.enum(["offer", "store"]),
+  targetId: z.string().min(1),
+  rating: z.coerce.number().int().min(1, "Choose 1 to 5 stars.").max(5, "Choose 1 to 5 stars."),
+  comment: z.string().trim().min(10, "Write at least 10 characters.").max(1000),
+});
+
+export const reviewUpdateSchema = z.object({
+  rating: z.coerce.number().int().min(1).max(5),
+  comment: z.string().trim().min(10, "Write at least 10 characters.").max(1000),
+});
+
 export const redemptionSchema = z.object({
   offerId: z.string().min(1),
 });

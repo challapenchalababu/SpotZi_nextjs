@@ -286,6 +286,33 @@ export interface ReportDTO {
   updatedAt: string;
 }
 
+export type ReviewTargetType = "offer" | "store";
+
+export interface ReviewDTO {
+  id: string;
+  userId: string;
+  userName?: string;
+  targetType: ReviewTargetType;
+  targetId: string;
+  offerId?: string;
+  offerTitle?: string;
+  branchId?: string;
+  branchName?: string;
+  businessId?: string;
+  businessName?: string;
+  rating: number;
+  comment: string;
+  status: "visible" | "removed";
+  mine?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReviewSummary {
+  averageRating: number;
+  reviewCount: number;
+}
+
 export interface ActivityDTO {
   id: string;
   actorId?: string;

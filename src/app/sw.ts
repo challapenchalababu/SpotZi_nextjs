@@ -37,6 +37,8 @@ function isPrivatePath(pathname: string) {
     pathname.startsWith("/api/redemptions") ||
     pathname.startsWith("/api/favorites") ||
     pathname.startsWith("/api/reports") ||
+    pathname.startsWith("/api/reviews") ||
+    pathname.startsWith("/api/admin/reviews") ||
     pathname.startsWith("/api/businesses") ||
     pathname.startsWith("/api/branches") ||
     pathname.startsWith("/api/templates") ||
